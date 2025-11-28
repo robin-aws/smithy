@@ -770,6 +770,23 @@ string pattern
 )
 structure required {}
 
+/// TODO: These expressions must produce 'true'...
+@trait(
+    selector: "*"
+)
+list contracts {
+    member: Contract
+}
+
+structure Contract {
+    /// JMESPath expression that must evaluate to true.
+    @required
+    expression: String
+
+    /// Description of the contract. Used in error messages when violated.
+    description: String
+}
+
 /// Configures a structure member's resource property mapping behavior.
 @trait(
     selector: "structure > member"

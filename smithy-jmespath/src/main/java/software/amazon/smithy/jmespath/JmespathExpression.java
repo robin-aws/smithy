@@ -7,6 +7,8 @@ package software.amazon.smithy.jmespath;
 import java.util.Set;
 import java.util.TreeSet;
 import software.amazon.smithy.jmespath.ast.LiteralExpression;
+import software.amazon.smithy.jmespath.evaluation.JmespathRuntime;
+import software.amazon.smithy.jmespath.evaluation.Evaluator;
 
 /**
  * Represents a JMESPath AST node.
@@ -80,5 +82,13 @@ public abstract class JmespathExpression {
         TypeChecker typeChecker = new TypeChecker(currentNode, problems);
         LiteralExpression result = this.accept(typeChecker);
         return new LinterResult(result.getType(), problems);
+    }
+
+    public LiteralExpression evaluate(LiteralExpression currentNode) {
+        return evaluate(currentNode, new LiteralExpressionJmespathRuntime());
+    }
+
+    public <T> T evaluate(T currentNode, JmespathRuntime<T> runtime) {
+        return new Evaluator<>(currentNode, runtime).visit(this);
     }
 }

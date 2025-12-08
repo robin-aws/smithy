@@ -786,6 +786,20 @@ structure Contract {
 
     /// Description of the contract. Used in error messages when violated.
     description: String
+
+    examples: shapeExamples
+}
+
+structure shapeExamples {
+    valid: ShapeExampleList
+    invalid: ShapeExampleList
+}
+
+@private
+@length(min: 1)
+@sparse
+list ShapeExampleList {
+    member: Document
 }
 
 /// Configures a structure member's resource property mapping behavior.

@@ -43,6 +43,13 @@ import software.amazon.smithy.jmespath.ast.ProjectionExpression;
 import software.amazon.smithy.jmespath.ast.SliceExpression;
 import software.amazon.smithy.jmespath.ast.Subexpression;
 
+// Note this does not yet use the Evaluator with a LiteralExpressionJmespathRuntime,
+// even though this visitor closely resembles the Evaluator.
+// That's because there are several places where this visitor deviates
+// from evaluation semantics in order to approximate answers,
+// and I'm not convinced that level of extension support in the evaluator or the runtime interface
+// is actually a good thing.
+// I'd rather put effort into a more robust type system and checker.
 final class TypeChecker implements ExpressionVisitor<LiteralExpression> {
 
     private static final Map<String, FunctionDefinition> FUNCTIONS = new HashMap<>();
@@ -352,7 +359,7 @@ final class TypeChecker implements ExpressionVisitor<LiteralExpression> {
             arguments.add(arg.accept(checker));
         }
 
-        FunctionDefinition def = FunctionDefinition.FUNCTIONS.get(expression.getName());
+        FunctionDefinition def = FUNCTIONS.get(expression.getName());
 
         // Function must be known.
         if (def == null) {

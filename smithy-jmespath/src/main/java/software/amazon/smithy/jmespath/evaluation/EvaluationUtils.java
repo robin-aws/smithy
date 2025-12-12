@@ -6,10 +6,13 @@ package software.amazon.smithy.jmespath.evaluation;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Iterator;
+import java.util.Objects;
+import software.amazon.smithy.jmespath.RuntimeType;
 
-public class EvaluationUtils {
+public final class EvaluationUtils {
 
-    public static final InheritingClassMap<NumberType> numberTypeForClass = InheritingClassMap.<NumberType>builder()
+    private static final InheritingClassMap<NumberType> numberTypeForClass = InheritingClassMap.<NumberType>builder()
             .put(Byte.class, NumberType.BYTE)
             .put(Short.class, NumberType.SHORT)
             .put(Integer.class, NumberType.INTEGER)
@@ -63,7 +66,7 @@ public class EvaluationUtils {
         }
     }
 
-    public static Number addNumbers(Number a, Number b) {
+    static Number addNumbers(Number a, Number b) {
         if (isBig(a, b)) {
             return toBigDecimal(a).add(toBigDecimal(b));
         } else if (a instanceof Double || b instanceof Double || a instanceof Float || b instanceof Float) {
@@ -73,7 +76,7 @@ public class EvaluationUtils {
         }
     }
 
-    public static Number divideNumbers(Number a, Number b) {
+    static Number divideNumbers(Number a, Number b) {
         if (isBig(a, b)) {
             return toBigDecimal(a).divide(toBigDecimal(b));
         } else {
@@ -83,5 +86,56 @@ public class EvaluationUtils {
 
     public static int codePointCount(String string) {
         return string.codePointCount(0, string.length());
+    }
+
+    /**
+     * Default implementation of equality.
+     * Objects.equals() is not generally adequate because it will not
+     * consider equivalent Number values of different types equal.
+     */
+    public static <T> boolean equals(JmespathRuntime<T> runtime, T a, T b) {
+        switch (runtime.typeOf(a)) {
+            case NULL:
+            case STRING:
+            case BOOLEAN:
+                return Objects.equals(a, b);
+            case NUMBER:
+                if (!runtime.is(b, RuntimeType.NUMBER)) {
+                    return false;
+                }
+                return runtime.compare(a, b) == 0;
+            case ARRAY:
+                if (!runtime.is(b, RuntimeType.ARRAY)) {
+                    return false;
+                }
+                Iterator<? extends T> aIter = runtime.asIterable(a).iterator();
+                Iterator<? extends T> bIter = runtime.asIterable(b).iterator();
+                while (aIter.hasNext()) {
+                    if (!bIter.hasNext()) {
+                        return false;
+                    }
+                    if (!runtime.equal(aIter.next(), bIter.next())) {
+                        return false;
+                    }
+                }
+                return !bIter.hasNext();
+            case OBJECT:
+                if (!runtime.is(b, RuntimeType.OBJECT)) {
+                    return false;
+                }
+                if (runtime.length(a) != runtime.length(b)) {
+                    return false;
+                }
+                for (T key : runtime.asIterable(a)) {
+                    T aValue = runtime.value(a, key);
+                    T bValue = runtime.value(b, key);
+                    if (!runtime.equal(aValue, bValue)) {
+                        return false;
+                    }
+                }
+                return true;
+            default:
+                throw new IllegalStateException();
+        }
     }
 }

@@ -7,7 +7,6 @@ package software.amazon.smithy.jmespath.evaluation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 import software.amazon.smithy.jmespath.ExpressionVisitor;
 import software.amazon.smithy.jmespath.JmespathException;
 import software.amazon.smithy.jmespath.JmespathExceptionType;
@@ -31,15 +30,13 @@ import software.amazon.smithy.jmespath.ast.OrExpression;
 import software.amazon.smithy.jmespath.ast.ProjectionExpression;
 import software.amazon.smithy.jmespath.ast.SliceExpression;
 import software.amazon.smithy.jmespath.ast.Subexpression;
-import software.amazon.smithy.jmespath.functions.Function;
-import software.amazon.smithy.jmespath.functions.FunctionArgument;
-import software.amazon.smithy.jmespath.functions.FunctionRegistry;
 
 public class Evaluator<T> implements ExpressionVisitor<T> {
 
     private final JmespathRuntime<T> runtime;
 
-    // TODO: Try making this state mutable instead of creating lots of sub-Evaluators
+    // We could make this state mutable instead of creating lots of sub-Evaluators.
+    // This would make evaluation not thread-safe, but it's unclear how much that matters.
     private final T current;
 
     public Evaluator(T current, JmespathRuntime<T> runtime) {
@@ -110,7 +107,7 @@ public class Evaluator<T> implements ExpressionVisitor<T> {
             return runtime.createNull();
         }
         JmespathRuntime.ArrayBuilder<T> flattened = runtime.arrayBuilder();
-        for (T val : runtime.toIterable(value)) {
+        for (T val : runtime.asIterable(value)) {
             if (runtime.is(val, RuntimeType.ARRAY)) {
                 flattened.addAll(val);
                 continue;
@@ -148,10 +145,7 @@ public class Evaluator<T> implements ExpressionVisitor<T> {
         if (!runtime.is(current, RuntimeType.ARRAY)) {
             return runtime.createNull();
         }
-        // TODO: Capping at int here unnecessarily
-        // Perhaps define intLength() and return -1 if it doesn't fit?
-        // Although technically IndexExpression should be using a Number instead of an int in the first place
-        int length = runtime.length(current).intValue();
+        int length = runtime.length(current);
         // Negative indices indicate reverse indexing in JMESPath
         if (index < 0) {
             index = length + index;
@@ -159,12 +153,16 @@ public class Evaluator<T> implements ExpressionVisitor<T> {
         if (length <= index || index < 0) {
             return runtime.createNull();
         }
-        return runtime.element(current, runtime.createNumber(index));
+        return runtime.element(current, index);
     }
 
     @Override
     public T visitLiteral(LiteralExpression literalExpression) {
-        if (literalExpression.isNumberValue()) {
+        if (literalExpression.isStringValue()) {
+            return runtime.createString(literalExpression.expectStringValue());
+        } else if (literalExpression.isBooleanValue()) {
+            return runtime.createBoolean(literalExpression.expectBooleanValue());
+        } else if (literalExpression.isNumberValue()) {
             return runtime.createNumber(literalExpression.expectNumberValue());
         } else if (literalExpression.isArrayValue()) {
             JmespathRuntime.ArrayBuilder<T> result = runtime.arrayBuilder();
@@ -180,10 +178,6 @@ public class Evaluator<T> implements ExpressionVisitor<T> {
                 result.put(key, value);
             }
             return result.build();
-        } else if (literalExpression.isStringValue()) {
-            return runtime.createString(literalExpression.expectStringValue());
-        } else if (literalExpression.isBooleanValue()) {
-            return runtime.createBoolean(literalExpression.expectBooleanValue());
         } else if (literalExpression.isNullValue()) {
             return runtime.createNull();
         }
@@ -244,7 +238,7 @@ public class Evaluator<T> implements ExpressionVisitor<T> {
             return runtime.createNull();
         }
         JmespathRuntime.ArrayBuilder<T> projectedResults = runtime.arrayBuilder();
-        for (T result : runtime.toIterable(resultList)) {
+        for (T result : runtime.asIterable(resultList)) {
             T projected = new Evaluator<T>(result, runtime).visit(projectionExpression.getRight());
             if (!runtime.typeOf(projected).equals(RuntimeType.NULL)) {
                 projectedResults.add(projected);
@@ -260,7 +254,7 @@ public class Evaluator<T> implements ExpressionVisitor<T> {
             return runtime.createNull();
         }
         JmespathRuntime.ArrayBuilder<T> results = runtime.arrayBuilder();
-        for (T val : runtime.toIterable(left)) {
+        for (T val : runtime.asIterable(left)) {
             T output = new Evaluator<>(val, runtime).visit(filterProjectionExpression.getComparison());
             if (runtime.isTruthy(output)) {
                 T result = new Evaluator<>(val, runtime).visit(filterProjectionExpression.getRight());
@@ -279,7 +273,7 @@ public class Evaluator<T> implements ExpressionVisitor<T> {
             return runtime.createNull();
         }
         JmespathRuntime.ArrayBuilder<T> projectedResults = runtime.arrayBuilder();
-        for (T member : runtime.toIterable(resultObject)) {
+        for (T member : runtime.asIterable(resultObject)) {
             T memberValue = runtime.value(resultObject, member);
             if (!runtime.is(memberValue, RuntimeType.NULL)) {
                 T projectedResult = new Evaluator<T>(memberValue, runtime).visit(objectProjectionExpression.getRight());
@@ -293,18 +287,49 @@ public class Evaluator<T> implements ExpressionVisitor<T> {
 
     @Override
     public T visitSlice(SliceExpression sliceExpression) {
-        return runtime.slice(current,
-                optionalNumber(sliceExpression.getStart()),
-                optionalNumber(sliceExpression.getStop()),
-                runtime.createNumber(sliceExpression.getStep()));
-    }
-
-    private T optionalNumber(OptionalInt optionalInt) {
-        if (optionalInt.isPresent()) {
-            return runtime.createNumber(optionalInt.getAsInt());
-        } else {
+        if (!runtime.is(current, RuntimeType.ARRAY)) {
             return runtime.createNull();
         }
+
+        int length = runtime.length(current);
+
+        int step = sliceExpression.getStep();
+        if (step == 0) {
+            throw new JmespathException(JmespathExceptionType.INVALID_VALUE, "invalid-value");
+        }
+
+        int start;
+        if (!sliceExpression.getStart().isPresent()) {
+            start = step > 0 ? 0 : length - 1;
+        } else {
+            start = sliceExpression.getStart().getAsInt();
+            if (start < 0) {
+                start = length + start;
+            }
+            if (start < 0) {
+                start = 0;
+            } else if (start > length - 1) {
+                start = length - 1;
+            }
+        }
+
+        int stop;
+        if (!sliceExpression.getStop().isPresent()) {
+            stop = step > 0 ? length : -1;
+        } else {
+            stop = sliceExpression.getStop().getAsInt();
+            if (stop < 0) {
+                stop = length + stop;
+            }
+
+            if (stop < 0) {
+                stop = -1;
+            } else if (stop > length) {
+                stop = length;
+            }
+        }
+
+        return runtime.slice(current, start, stop, step);
     }
 
     @Override

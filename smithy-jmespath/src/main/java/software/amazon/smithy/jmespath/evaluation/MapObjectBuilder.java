@@ -8,6 +8,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * A default implementation of {@link JmespathRuntime.ObjectBuilder}.
+ * using a {@link Map} as the backing store.
+ */
 public class MapObjectBuilder<T> implements JmespathRuntime.ObjectBuilder<T> {
 
     private final JmespathRuntime<T> runtime;
@@ -26,7 +30,9 @@ public class MapObjectBuilder<T> implements JmespathRuntime.ObjectBuilder<T> {
 
     @Override
     public void putAll(T object) {
-        for (T key : runtime.toIterable(object)) {
+        // A fastpath for when object is a Map doesn't quite work,
+        // because you would need to know that it's specifically a Map<String, T>.
+        for (T key : runtime.asIterable(object)) {
             result.put(runtime.asString(key), runtime.value(object, key));
         }
     }

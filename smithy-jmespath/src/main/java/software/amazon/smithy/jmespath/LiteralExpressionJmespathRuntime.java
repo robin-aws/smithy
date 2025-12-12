@@ -11,10 +11,10 @@ import java.util.Map;
 import software.amazon.smithy.jmespath.ast.LiteralExpression;
 import software.amazon.smithy.jmespath.evaluation.EvaluationUtils;
 import software.amazon.smithy.jmespath.evaluation.JmespathRuntime;
+import software.amazon.smithy.jmespath.evaluation.MappingIterable;
 import software.amazon.smithy.jmespath.evaluation.NumberType;
-import software.amazon.smithy.jmespath.evaluation.WrappingIterable;
 
-public class LiteralExpressionJmespathRuntime implements JmespathRuntime<LiteralExpression> {
+public final class LiteralExpressionJmespathRuntime implements JmespathRuntime<LiteralExpression> {
 
     public static final LiteralExpressionJmespathRuntime INSTANCE = new LiteralExpressionJmespathRuntime();
 
@@ -64,7 +64,7 @@ public class LiteralExpressionJmespathRuntime implements JmespathRuntime<Literal
     }
 
     @Override
-    public Number length(LiteralExpression value) {
+    public int length(LiteralExpression value) {
         switch (value.getType()) {
             case STRING:
                 return EvaluationUtils.codePointCount(value.expectStringValue());
@@ -78,17 +78,17 @@ public class LiteralExpressionJmespathRuntime implements JmespathRuntime<Literal
     }
 
     @Override
-    public LiteralExpression element(LiteralExpression array, LiteralExpression index) {
-        return LiteralExpression.from(array.expectArrayValue().get(index.expectNumberValue().intValue()));
+    public LiteralExpression element(LiteralExpression array, int index) {
+        return LiteralExpression.from(array.expectArrayValue().get(index));
     }
 
     @Override
-    public Iterable<LiteralExpression> toIterable(LiteralExpression array) {
+    public Iterable<LiteralExpression> asIterable(LiteralExpression array) {
         switch (array.getType()) {
             case ARRAY:
-                return new WrappingIterable<>(LiteralExpression::from, array.expectArrayValue());
+                return new MappingIterable<>(LiteralExpression::from, array.expectArrayValue());
             case OBJECT:
-                return new WrappingIterable<>(LiteralExpression::from, array.expectObjectValue().keySet());
+                return new MappingIterable<>(LiteralExpression::from, array.expectObjectValue().keySet());
             default:
                 throw new IllegalStateException("invalid-type");
         }
@@ -99,7 +99,7 @@ public class LiteralExpressionJmespathRuntime implements JmespathRuntime<Literal
         return new ArrayLiteralExpressionBuilder();
     }
 
-    private static class ArrayLiteralExpressionBuilder implements ArrayBuilder<LiteralExpression> {
+    private static final class ArrayLiteralExpressionBuilder implements ArrayBuilder<LiteralExpression> {
         private final List<Object> result = new ArrayList<>();
 
         @Override
@@ -136,7 +136,7 @@ public class LiteralExpressionJmespathRuntime implements JmespathRuntime<Literal
         return new ObjectLiteralExpressionBuilder();
     }
 
-    private static class ObjectLiteralExpressionBuilder implements ObjectBuilder<LiteralExpression> {
+    private static final class ObjectLiteralExpressionBuilder implements ObjectBuilder<LiteralExpression> {
         private final Map<String, Object> result = new HashMap<>();
 
         @Override

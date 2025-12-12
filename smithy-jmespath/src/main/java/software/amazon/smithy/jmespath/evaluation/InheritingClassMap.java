@@ -4,11 +4,18 @@
  */
 package software.amazon.smithy.jmespath.evaluation;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class InheritingClassMap<T> {
+/**
+ * A map using Class values as keys that accounts for subtyping.
+ * <p>
+ * Useful for external implementations of polymorphism,
+ * such as attaching behavior to an existing type hierarchy you cannot modify.
+ * Can be more efficient than a chain of if statements using instanceof.
+ */
+class InheritingClassMap<T> {
 
     public static <T> Builder<T> builder() {
         return new Builder<>();
@@ -37,7 +44,7 @@ public class InheritingClassMap<T> {
         for (Class<?> interfaceClass : clazz.getInterfaces()) {
             T interfaceResult = get(interfaceClass);
             if (interfaceResult != null) {
-                if (result != null) {
+                if (result != null && !result.equals(interfaceResult)) {
                     throw new RuntimeException("Duplicate match for " + clazz + ": "
                             + matchingClass + " and " + interfaceClass);
                 }
@@ -54,7 +61,7 @@ public class InheritingClassMap<T> {
 
     public static class Builder<T> {
 
-        private final Map<Class<?>, T> map = new ConcurrentHashMap<>();
+        private final Map<Class<?>, T> map = new HashMap<>();
 
         public Builder<T> put(Class<?> clazz, T value) {
             map.put(clazz, Objects.requireNonNull(value));

@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "plugins": {
+    "trait-codegen": {
+      "package": "software.amazon.smithy.contracts",
+      "namespace": "smithy.contracts",
+      "header": [
+        "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.",
+        "SPDX-License-Identifier: Apache-2.0"
+      ]
+    }
+  }
+}

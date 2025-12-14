@@ -775,16 +775,16 @@ structure required {}
 @trait(
     selector: "*"
 )
-list contracts {
-    member: Contract
+list conditions {
+    member: Condition
 }
 
-structure Contract {
+structure Condition {
     /// JMESPath expression that must evaluate to true.
     @required
     expression: String
 
-    /// Description of the contract. Used in error messages when violated.
+    /// Description of the condition. Used in error messages when violated.
     description: String
 
     examples: shapeExamples

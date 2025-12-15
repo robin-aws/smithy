@@ -1,0 +1,56 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+package software.amazon.smithy.contracts;
+
+import software.amazon.smithy.contracts.Condition;
+import software.amazon.smithy.contracts.ConditionsTrait;
+import software.amazon.smithy.jmespath.JmespathExpression;
+import software.amazon.smithy.jmespath.evaluation.Evaluator;
+import software.amazon.smithy.model.jmespath.node.NodeJmespathRuntime;
+import software.amazon.smithy.model.node.Node;
+import software.amazon.smithy.model.shapes.Shape;
+import software.amazon.smithy.model.validation.NodeValidationVisitor;
+import software.amazon.smithy.model.validation.Severity;
+import software.amazon.smithy.model.validation.node.MemberAndShapeTraitPlugin;
+
+public class ConditionsTraitPlugin extends MemberAndShapeTraitPlugin<Shape, Node, ConditionsTrait> {
+
+    public ConditionsTraitPlugin() {
+        super(Shape.class, Node.class, ConditionsTrait.class);
+    }
+
+    @Override
+    protected void check(Shape shape, ConditionsTrait trait, Node value, Context context, Emitter emitter) {
+        for (Condition condition : trait.getValues()) {
+            checkContract(shape, condition, value, context, emitter);
+        }
+    }
+
+    private void checkContract(
+            Shape shape,
+            Condition condition,
+            Node value,
+            Context context,
+            Emitter emitter
+    ) {
+        JmespathExpression expression = JmespathExpression.parse(condition.getExpression());
+        Evaluator<Node> evaluator = new Evaluator<>(value, NodeJmespathRuntime.INSTANCE);
+        Node result = evaluator.visit(expression);
+        if (!result.expectBooleanNode().getValue()) {
+            emitter.accept(value,
+                    getSeverity(context),
+                    String.format(
+                            "Value provided for `%s` must match condition expression: %s",
+                            shape.getId(),
+                            condition.getExpression()));
+        }
+    }
+
+    private Severity getSeverity(Context context) {
+        return context.hasFeature(NodeValidationVisitor.Feature.ALLOW_CONSTRAINT_ERRORS)
+                ? Severity.WARNING
+                : Severity.ERROR;
+    }
+}

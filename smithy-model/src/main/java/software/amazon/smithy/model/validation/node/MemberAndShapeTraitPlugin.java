@@ -9,14 +9,14 @@ import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.traits.Trait;
 
-abstract class MemberAndShapeTraitPlugin<S extends Shape, N extends Node, T extends Trait>
+public abstract class MemberAndShapeTraitPlugin<S extends Shape, N extends Node, T extends Trait>
         implements NodeValidatorPlugin {
 
     private final Class<S> targetShapeClass;
     private final Class<N> nodeClass;
     private final Class<T> traitClass;
 
-    MemberAndShapeTraitPlugin(Class<S> targetShapeClass, Class<N> nodeClass, Class<T> traitClass) {
+    public MemberAndShapeTraitPlugin(Class<S> targetShapeClass, Class<N> nodeClass, Class<T> traitClass) {
         this.targetShapeClass = targetShapeClass;
         this.nodeClass = nodeClass;
         this.traitClass = traitClass;

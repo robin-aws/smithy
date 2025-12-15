@@ -41,24 +41,6 @@ public interface NodeValidatorPlugin {
     void apply(Shape shape, Node value, Context context, Emitter emitter);
 
     /**
-     * @return Gets the built-in Node validation plugins.
-     */
-    static List<NodeValidatorPlugin> getBuiltins() {
-        return ListUtils.of(
-                new NonNumericFloatValuesPlugin(),
-                new BlobLengthPlugin(),
-                new CollectionLengthPlugin(),
-                new IdRefPlugin(),
-                new MapLengthPlugin(),
-                new PatternTraitPlugin(),
-                new RangeTraitPlugin(),
-                new StringEnumPlugin(),
-                new IntEnumPlugin(),
-                new StringLengthPlugin(),
-                new UniqueItemsPlugin());
-    }
-
-    /**
      * Validation context to pass to each NodeValidatorPlugin.
      */
     @SmithyInternalApi

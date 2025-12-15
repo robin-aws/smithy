@@ -14,9 +14,9 @@ import software.amazon.smithy.model.validation.Severity;
 /**
  * Validates the pattern trait on string shapes or members that target them.
  */
-final class PatternTraitPlugin extends MemberAndShapeTraitPlugin<StringShape, StringNode, PatternTrait> {
+public final class PatternTraitPlugin extends MemberAndShapeTraitPlugin<StringShape, StringNode, PatternTrait> {
 
-    PatternTraitPlugin() {
+    public PatternTraitPlugin() {
         super(StringShape.class, StringNode.class, PatternTrait.class);
     }
 

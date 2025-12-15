@@ -18,8 +18,8 @@ import software.amazon.smithy.model.traits.UniqueItemsTrait;
 /**
  * Validates that items in lists with the `@uniqueItems` trait are unique.
  */
-final class UniqueItemsPlugin extends MemberAndShapeTraitPlugin<CollectionShape, ArrayNode, UniqueItemsTrait> {
-    UniqueItemsPlugin() {
+public final class UniqueItemsPlugin extends MemberAndShapeTraitPlugin<CollectionShape, ArrayNode, UniqueItemsTrait> {
+    public UniqueItemsPlugin() {
         super(CollectionShape.class, ArrayNode.class, UniqueItemsTrait.class);
     }
 

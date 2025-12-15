@@ -20,9 +20,9 @@ import software.amazon.smithy.utils.SmithyInternalApi;
  * matching the selector.
  */
 @SmithyInternalApi
-final class IdRefPlugin extends MemberAndShapeTraitPlugin<StringShape, StringNode, IdRefTrait> {
+public final class IdRefPlugin extends MemberAndShapeTraitPlugin<StringShape, StringNode, IdRefTrait> {
 
-    IdRefPlugin() {
+    public IdRefPlugin() {
         super(StringShape.class, StringNode.class, IdRefTrait.class);
     }
 

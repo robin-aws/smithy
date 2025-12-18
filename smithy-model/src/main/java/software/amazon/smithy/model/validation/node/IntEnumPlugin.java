@@ -12,9 +12,9 @@ import software.amazon.smithy.model.validation.ValidationUtils;
 /**
  * Validates NumberNodes against intEnum shapes' allowed enum values.
  */
-public final class IntEnumPlugin extends FilteredPlugin<IntEnumShape, NumberNode> {
+final class IntEnumPlugin extends FilteredPlugin<IntEnumShape, NumberNode> {
 
-    public IntEnumPlugin() {
+    IntEnumPlugin() {
         super(IntEnumShape.class, NumberNode.class);
     }
 

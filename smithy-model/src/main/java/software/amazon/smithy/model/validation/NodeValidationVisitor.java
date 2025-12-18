@@ -63,13 +63,7 @@ import software.amazon.smithy.utils.SmithyBuilder;
  */
 public final class NodeValidationVisitor implements ShapeVisitor<List<ValidationEvent>> {
 
-    private static final List<NodeValidatorPlugin> BUILTIN;
-    static {
-        BUILTIN = new ArrayList<>();
-        for (NodeValidatorPlugin plugin: ServiceLoader.load(NodeValidatorPlugin.class, NodeValidatorPlugin.class.getClassLoader())) {
-            BUILTIN.add(plugin);
-        }
-    }
+    private static final List<NodeValidatorPlugin> BUILTIN = NodeValidatorPlugin.getBuiltins();
 
     private final Model model;
     private final TimestampValidationStrategy timestampValidationStrategy;

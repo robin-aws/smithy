@@ -16,7 +16,7 @@ import software.amazon.smithy.model.validation.Severity;
 /**
  * Validates the range trait on number shapes or members that target them.
  */
-public class RangeTraitPlugin implements NodeValidatorPlugin {
+class RangeTraitPlugin implements NodeValidatorPlugin {
     private static final String MEMBER = "Member";
     private static final String TARGET = "Target";
     private static final String INVALID_RANGE = "InvalidRange";

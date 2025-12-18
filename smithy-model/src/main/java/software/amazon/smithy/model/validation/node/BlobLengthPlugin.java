@@ -18,9 +18,9 @@ import software.amazon.smithy.utils.SmithyInternalApi;
  * Validates length trait on blob shapes and members that target blob shapes.
  */
 @SmithyInternalApi
-public final class BlobLengthPlugin extends MemberAndShapeTraitPlugin<BlobShape, StringNode, LengthTrait> {
+final class BlobLengthPlugin extends MemberAndShapeTraitPlugin<BlobShape, StringNode, LengthTrait> {
 
-    public BlobLengthPlugin() {
+    BlobLengthPlugin() {
         super(BlobShape.class, StringNode.class, LengthTrait.class);
     }
 

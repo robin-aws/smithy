@@ -16,9 +16,9 @@ import software.amazon.smithy.utils.SmithyInternalApi;
  * Validates the length trait on map shapes or members that target them.
  */
 @SmithyInternalApi
-public final class MapLengthPlugin extends MemberAndShapeTraitPlugin<MapShape, ObjectNode, LengthTrait> {
+final class MapLengthPlugin extends MemberAndShapeTraitPlugin<MapShape, ObjectNode, LengthTrait> {
 
-    public MapLengthPlugin() {
+    MapLengthPlugin() {
         super(MapShape.class, ObjectNode.class, LengthTrait.class);
     }
 

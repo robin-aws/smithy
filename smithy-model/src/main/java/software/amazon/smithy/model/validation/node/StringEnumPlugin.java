@@ -13,9 +13,9 @@ import software.amazon.smithy.model.validation.ValidationUtils;
 /**
  * Validates the enum trait on string shapes.
  */
-public final class StringEnumPlugin extends FilteredPlugin<StringShape, StringNode> {
+final class StringEnumPlugin extends FilteredPlugin<StringShape, StringNode> {
 
-    public StringEnumPlugin() {
+    StringEnumPlugin() {
         super(StringShape.class, StringNode.class);
     }
 

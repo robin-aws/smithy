@@ -14,6 +14,7 @@ import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.internal.NodeHandler;
 import software.amazon.smithy.model.shapes.Shape;
+import software.amazon.smithy.model.traits.ExamplesTrait;
 import software.amazon.smithy.model.traits.Trait;
 import software.amazon.smithy.model.validation.AbstractValidator;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
@@ -42,9 +43,8 @@ public class ConditionsTraitValidator extends AbstractValidator {
     }
 
     private List<ValidationEvent> validateCondition(Model model, Shape shape, Trait trait, Condition condition) {
-        JmespathExpression parsed;
         try {
-            parsed = JmespathExpression.parse(condition.getExpression());
+            JmespathExpression.parse(condition.getExpression());
         } catch (JmespathException e) {
             return Collections.singletonList(error(
                     shape,
@@ -62,47 +62,55 @@ public class ConditionsTraitValidator extends AbstractValidator {
 
         List<ValidationEvent> events = new ArrayList<>();
 
-        List<Node> validValueNodes = condition.getExamples().getValid();
-        for (int index = 0; index < validValueNodes.size(); index += 1) {
-            Node validValueNode = validValueNodes.get(index);
-            NodeValidationVisitor visitor = NodeValidationVisitor.builder()
-                    .model(model)
-                    .eventShapeId(shape.getId())
-                    .eventId(getName() + ".valid." + index)
-                    .startingContext(String.format("Valid shape example `%s`",
-                            NodeHandler.print(validValueNode)))
-                    .value(validValueNode)
-                    .build();
+        if (condition.getExamples().isPresent()) {
+            ShapeExamples examples = condition.getExamples().get();
 
-            events.addAll(shape.accept(visitor));
-        }
+            if (examples.getValid().isPresent()) {
+                List<Node> validValueNodes = examples.getValid().get();
+                for (int index = 0; index < validValueNodes.size(); index += 1) {
+                    Node validValueNode = validValueNodes.get(index);
+                    NodeValidationVisitor visitor = NodeValidationVisitor.builder()
+                            .model(model)
+                            .eventShapeId(shape.getId())
+                            .eventId(getName() + ".valid." + index)
+                            .startingContext(String.format("Valid shape example `%s`",
+                                    NodeHandler.print(validValueNode)))
+                            .value(validValueNode)
+                            .build();
 
-        List<Node> invalidValueNodes = condition.getExamples().getValid();
-        for (int index = 0; index < invalidValueNodes.size(); index += 1) {
-            Node invalidValueNode = invalidValueNodes.get(index);
-            NodeValidationVisitor visitor = NodeValidationVisitor.builder()
-                    .model(model)
-                    .eventShapeId(shape.getId())
-                    .eventId(getName() + ".valid." + index)
-                    .startingContext(String.format("Invalid shape example `%s`",
-                            NodeHandler.print(invalidValueNode)))
-                    .value(invalidValueNode)
-                    .build();
+                    events.addAll(shape.accept(visitor));
+                }
+            }
 
-            List<ValidationEvent> validationEvents = shape.accept(visitor);
-            List<ValidationEvent> nonErrorValidationEvents = validationEvents.stream()
-                    .filter(validationEvent -> validationEvent.getSeverity() != Severity.ERROR)
-                    .collect(Collectors.toList());
+            if (examples.getInvalid().isPresent()) {
+                List<Node> invalidValueNodes = examples.getInvalid().get();
+                for (int index = 0; index < invalidValueNodes.size(); index += 1) {
+                    Node invalidValueNode = invalidValueNodes.get(index);
+                    NodeValidationVisitor visitor = NodeValidationVisitor.builder()
+                            .model(model)
+                            .eventShapeId(shape.getId())
+                            .eventId(getName() + ".valid." + index)
+                            .startingContext(String.format("Invalid shape example `%s`",
+                                    NodeHandler.print(invalidValueNode)))
+                            .value(invalidValueNode)
+                            .build();
 
-            events.addAll(nonErrorValidationEvents);
+                    List<ValidationEvent> validationEvents = shape.accept(visitor);
+                    List<ValidationEvent> nonErrorValidationEvents = validationEvents.stream()
+                            .filter(validationEvent -> validationEvent.getSeverity() != Severity.ERROR)
+                            .collect(Collectors.toList());
 
-            if (validationEvents.size() == nonErrorValidationEvents.size()) {
-                events.add(error(shape,
-                        invalidValueNode,
-                        String.format("Invalid shape example `%s` passed all validations when it shouldn't have",
-                                NodeHandler.print(invalidValueNode)),
-                        "invalid",
-                        Integer.toString(index)));
+                    events.addAll(nonErrorValidationEvents);
+
+                    if (validationEvents.size() == nonErrorValidationEvents.size()) {
+                        events.add(error(shape,
+                                invalidValueNode,
+                                String.format("Invalid shape example `%s` passed all validations when it shouldn't have",
+                                        NodeHandler.print(invalidValueNode)),
+                                "invalid",
+                                Integer.toString(index)));
+                    }
+                }
             }
         }
 

@@ -17,15 +17,11 @@ structure Condition {
     /// Description of the condition. Used in error messages when violated.
     description: String
 
-    @required
     examples: shapeExamples
 }
 
 structure shapeExamples {
-    @required
     valid: ShapeExampleList
-
-    @required
     invalid: ShapeExampleList
 }
 

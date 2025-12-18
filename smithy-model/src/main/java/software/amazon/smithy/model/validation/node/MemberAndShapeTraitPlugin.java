@@ -8,7 +8,9 @@ import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.traits.Trait;
+import software.amazon.smithy.utils.SmithyInternalApi;
 
+@SmithyInternalApi
 public abstract class MemberAndShapeTraitPlugin<S extends Shape, N extends Node, T extends Trait>
         implements NodeValidatorPlugin {
 

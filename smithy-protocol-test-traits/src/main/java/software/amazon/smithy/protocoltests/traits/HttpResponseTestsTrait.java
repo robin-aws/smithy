@@ -93,7 +93,7 @@ public final class HttpResponseTestsTrait extends AbstractTrait {
             // Validate the vendorParams for the test case if we have a shape defined.
             Optional<ShapeId> vendorParamsShapeOptional = testCase.getVendorParamsShape();
             ObjectNode vendorParams = testCase.getVendorParams();
-            if (vendorParamsShapeOptional.isPresent() && shape instanceof StructureShape) {
+            if (vendorParamsShapeOptional.isPresent()) {
                 if (!vendorParams.isEmpty()) {
                     // Otherwise, validate the params against the shape.
                     Shape vendorParamsShape = model.expectShape(vendorParamsShapeOptional.get());

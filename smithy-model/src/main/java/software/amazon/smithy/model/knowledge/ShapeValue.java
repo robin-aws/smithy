@@ -9,6 +9,8 @@ import software.amazon.smithy.model.validation.ValidationEvent;
 
 public interface ShapeValue extends ToNode, ToShapeId {
 
+    String eventId();
+
     default ShapeId eventShapeId() {
         return toShapeId();
     }
@@ -22,17 +24,17 @@ public interface ShapeValue extends ToNode, ToShapeId {
         return false;
     }
 
-    default ValidationEvent constraintsEvent(String eventId, String message) {
+    default ValidationEvent constraintsEvent(String message) {
         Severity severity = hasFeature(NodeValidationVisitor.Feature.ALLOW_CONSTRAINT_ERRORS)
                 ? Severity.WARNING
                 : Severity.ERROR;
-        return event(eventId, severity, message);
+        return event(severity, message);
     }
 
-    default ValidationEvent event(String eventId, Severity severity, String message) {
+    default ValidationEvent event(Severity severity, String message) {
         String context = context();
         return ValidationEvent.builder()
-                .id(eventId)
+                .id(eventId())
                 .shapeId(eventShapeId())
                 .severity(severity)
                 .sourceLocation(toNode().getSourceLocation())

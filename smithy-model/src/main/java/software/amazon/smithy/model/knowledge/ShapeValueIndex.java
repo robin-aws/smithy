@@ -2,6 +2,8 @@ package software.amazon.smithy.model.knowledge;
 
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
+import software.amazon.smithy.model.node.StringNode;
+import software.amazon.smithy.model.shapes.MapShape;
 import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
@@ -12,6 +14,7 @@ import software.amazon.smithy.model.validation.Severity;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -43,25 +46,38 @@ public class ShapeValueIndex implements KnowledgeIndex {
 
         Node value = shapeValue.toNode();
         model.getShape(shapeValue.toShapeId()).ifPresent(shape -> {
-            if (shape.isStructureShape() && value.isObjectNode()) {
+            if ((shape.isStructureShape() || shape.isUnionShape()) && value.isObjectNode()) {
                 Map<String, MemberShape> members = shape.getAllMembers();
 
                 for (Map.Entry<String, Node> entry : value.expectObjectNode().getStringMap().entrySet()) {
                     String entryKey = entry.getKey();
                     if (members.containsKey(entryKey)) {
-                        ShapeValue childShapeValue = new SimpleShapeValue(shapeValue.eventShapeId(), members.get(entryKey).getTarget(), entry.getValue());
-                        addShapeValue(childShapeValue);
+                        addChildValue(shapeValue, entryKey, members.get(entryKey), entry.getValue());
                     }
                 }
-            } else if (shape.isListShape() && value.isArrayNode()) {
-                ShapeId memberShapeId = shape.asListShape().get().getMember().getTarget();
+            } else if (shape.isMapShape() && value.isObjectNode()) {
+                MapShape mapShape = shape.asMapShape().get();
 
-                for (Node element : value.expectArrayNode().getElements()) {
-                    ShapeValue childShapeValue = new SimpleShapeValue(memberShapeId, element);
-                    addShapeValue(childShapeValue);
+                for (Map.Entry<StringNode, Node> entry : value.expectObjectNode().getMembers().entrySet()) {
+                    String key = entry.getKey().getValue();
+                    addChildValue(shapeValue, key + " (map-key)", mapShape.getKey(), entry.getKey());
+                    addChildValue(shapeValue, key, mapShape.getKey(), entry.getValue());
+                }
+            } else if (shape.isListShape() && value.isArrayNode()) {
+                Shape memberShape = shape.asListShape().get().getMember();
+
+                List<Node> elements = value.expectArrayNode().getElements();
+                for (int index = 0; index < elements.size(); index++) {
+                    addChildValue(shapeValue, Integer.toString(index), memberShape, elements.get(index));
                 }
             }
         });
+    }
+
+    private void addChildValue(ShapeValue parent, String name, Shape shape, Node value) {
+        String childContext = parent.context().isEmpty() ? name : parent.context() + "." + name;
+        ShapeValue childShapeValue = new SimpleShapeValue(parent.eventId(), parent.eventShapeId(), shape, childContext, value);
+        addShapeValue(childShapeValue);
     }
 
     public Set<ShapeValue> getShapeValues(ToShapeId toShapeId) {

@@ -44,7 +44,7 @@ public final class DefaultTrait extends AbstractTrait {
     @Override
     public Set<ShapeValue> shapeValues(Model model, Shape shape) {
         Set<ShapeValue> result = new HashSet<>(super.shapeValues(model, shape));
-        result.add(new SimpleShapeValue(shape.toShapeId(), toNode()));
+        result.add(new SimpleShapeValue("DefaultTrait", shape.toShapeId(), shape.toShapeId(), "Error validating @default trait", toNode()));
         return result;
     }
 }

@@ -19,6 +19,7 @@ import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.shapes.ToShapeId;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Validator;
+import software.amazon.smithy.model.validation.ValidatorService;
 import software.amazon.smithy.utils.OptionalUtils;
 import software.amazon.smithy.utils.Pair;
 
@@ -49,6 +50,7 @@ import software.amazon.smithy.utils.Pair;
  * {@link Validator} interface and registering the validator through SPI.
  */
 public interface Trait extends FromSourceLocation, ToNode, ToShapeId {
+
     /**
      * Gets the shape ID of the trait.
      *
@@ -152,6 +154,6 @@ public interface Trait extends FromSourceLocation, ToNode, ToShapeId {
      * @param shape The shape this trait is applied to.
      */
     default Set<ShapeValue> shapeValues(Model model, Shape shape) {
-        return Collections.singleton(new SimpleShapeValue(shape.getId(), toShapeId(), toNode()));
+        return Collections.singleton(new SimpleShapeValue("TraitValue", shape.getId(), toShapeId(), getIdiomaticTraitName(this), toNode()));
     }
 }

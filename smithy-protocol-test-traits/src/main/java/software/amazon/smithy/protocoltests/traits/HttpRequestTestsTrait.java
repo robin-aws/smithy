@@ -96,7 +96,8 @@ public final class HttpRequestTestsTrait extends AbstractTrait {
                 if (!vendorParams.isEmpty()) {
                     // Otherwise, validate the params against the shape.
                     Shape vendorParamsShape = model.expectShape(vendorParamsShapeOptional.get());
-                    result.add(new SimpleShapeValue(vendorParamsShapeOptional.get(), vendorParams));
+                    result.add(new SimpleShapeValue("HttpRequestTestsInput", shape.toShapeId(), vendorParamsShapeOptional.get(),
+                            "smithy.test#httpRequestTests." + i + ".vendorParams", vendorParams));
                 }
             }
         }

@@ -78,13 +78,21 @@ public final class ExamplesTrait extends AbstractTrait implements ToSmithyBuilde
 
         for (Example example : examples) {
             // TODO: Specify ALLOW_CONSTRAINT_ERRORS
-            result.add(new SimpleShapeValue(operationShape.getInputShape(), example.getInput()));
+            result.add(new SimpleShapeValue("ExamplesTrait", shape.toShapeId(), operationShape.getInputShape(),
+                    shapeValueContext(example, "input"), example.getInput()));
             example.getOutput().ifPresent(output ->
-                    result.add(new SimpleShapeValue(operationShape.getOutputShape(), output)));
-            example.getError().ifPresent(result::add);
+                    result.add(new SimpleShapeValue("ExamplesTrait", shape.toShapeId(), operationShape.getOutputShape(),
+                            shapeValueContext(example, "output"), output)));
+            example.getError().ifPresent(error ->
+                    result.add(new SimpleShapeValue("ExamplesTrait", shape.toShapeId(), error.getShapeId(),
+                            shapeValueContext(example, "error"), error.toNode())));
         }
 
         return result;
+    }
+
+    private String shapeValueContext(Example example, String name) {
+        return "Example " + name + " of `" + example.getTitle() + "`";
     }
 
     @Override
@@ -289,7 +297,7 @@ public final class ExamplesTrait extends AbstractTrait implements ToSmithyBuilde
         }
     }
 
-    public static final class ErrorExample implements ToNode, ToSmithyBuilder<ErrorExample>, ShapeValue {
+    public static final class ErrorExample implements ToNode, ToSmithyBuilder<ErrorExample> {
         private final ShapeId shapeId;
         private final ObjectNode content;
 
@@ -310,11 +318,6 @@ public final class ExamplesTrait extends AbstractTrait implements ToSmithyBuilde
          * @return Gets the error shape id for the example.
          */
         public ShapeId getShapeId() {
-            return shapeId;
-        }
-
-        @Override
-        public ShapeId toShapeId() {
             return shapeId;
         }
 

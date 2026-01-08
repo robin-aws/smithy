@@ -5,6 +5,9 @@
 package software.amazon.smithy.model.validation.suppressions;
 
 import java.util.Optional;
+
+import software.amazon.smithy.model.FromSourceLocation;
+import software.amazon.smithy.model.SourceLocation;
 import software.amazon.smithy.model.node.ExpectationNotMetException;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
@@ -16,7 +19,7 @@ import software.amazon.smithy.model.validation.Validator;
  * Suppresses {@link ValidationEvent}s emitted from {@link Validator}s.
  */
 @FunctionalInterface
-public interface Suppression {
+public interface Suppression extends FromSourceLocation {
 
     /**
      * Determines if the suppression applies to the given event.
@@ -33,6 +36,15 @@ public interface Suppression {
      */
     default Optional<String> getReason() {
         return Optional.empty();
+    }
+
+    /**
+     * If the suppression is required,
+     * then it must match at least one validation event,
+     * or else an additional un-suppressible event is emitted.
+     */
+    default boolean required() {
+        return false;
     }
 
     /**

@@ -6,6 +6,10 @@ import software.amazon.smithy.model.shapes.ToShapeId;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.ValidationEvent;
+import software.amazon.smithy.model.validation.suppressions.Suppression;
+
+import java.util.Collections;
+import java.util.List;
 
 public interface ShapeValue extends ToNode, ToShapeId {
 
@@ -22,6 +26,10 @@ public interface ShapeValue extends ToNode, ToShapeId {
     // TODO: Refactor/rename to something like "ShapeValueMetadata"
     default boolean hasFeature(NodeValidationVisitor.Feature feature) {
         return false;
+    }
+
+    default List<Suppression> suppressions() {
+        return Collections.emptyList();
     }
 
     default ValidationEvent constraintsEvent(String message) {

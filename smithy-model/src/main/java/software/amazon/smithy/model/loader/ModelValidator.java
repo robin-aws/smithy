@@ -307,6 +307,8 @@ final class ModelValidator implements Validator {
             }
 
             events.addAll(streamEvents(validators.parallelStream()));
+            events.addAll(validationEventDecorator.finish());
+
             return events;
         }
 

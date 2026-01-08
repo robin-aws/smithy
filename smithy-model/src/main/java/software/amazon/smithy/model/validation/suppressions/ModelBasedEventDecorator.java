@@ -6,9 +6,14 @@ package software.amazon.smithy.model.validation.suppressions;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceException;
+import software.amazon.smithy.model.knowledge.ShapeValue;
+import software.amazon.smithy.model.knowledge.ShapeValueIndex;
 import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
@@ -18,6 +23,9 @@ import software.amazon.smithy.model.validation.ValidatedResult;
 import software.amazon.smithy.model.validation.ValidationEvent;
 import software.amazon.smithy.model.validation.ValidationEventDecorator;
 import software.amazon.smithy.utils.SmithyUnstableApi;
+
+import static software.amazon.smithy.model.validation.Severity.ERROR;
+import static software.amazon.smithy.model.validation.Validator.MODEL_ERROR;
 
 /**
  * Creates a {@link ValidationEventDecorator} that applies custom suppressions, custom severity overrides,
@@ -70,13 +78,14 @@ public final class ModelBasedEventDecorator {
         // Create dedicated arrays to separate the state of the created decorator from the builder.
         List<ValidationEvent> events = new ArrayList<>();
         List<Suppression> loadedSuppressions = new ArrayList<>(suppressions);
-        loadMetadataSuppressions(model, loadedSuppressions, events);
+        loadMetadataAndShapeValueSuppressions(model, loadedSuppressions, events);
         List<SeverityOverride> loadedSeverityOverrides = new ArrayList<>(severityOverrides);
         loadMetadataSeverityOverrides(model, loadedSeverityOverrides, events);
+        Set<Suppression> appliedSuppressions = new HashSet<>();
 
         // Modify severities and overrides of each encountered event.
         for (int i = 0; i < events.size(); i++) {
-            events.set(i, modifyEventSeverity(model, events.get(i), loadedSuppressions, loadedSeverityOverrides));
+            events.set(i, modifyEventSeverity(model, events.get(i), loadedSuppressions, loadedSeverityOverrides, appliedSuppressions));
         }
 
         return new ValidatedResult<>(new ValidationEventDecorator() {
@@ -87,7 +96,24 @@ public final class ModelBasedEventDecorator {
 
             @Override
             public ValidationEvent decorate(ValidationEvent ev) {
-                return modifyEventSeverity(model, ev, loadedSuppressions, loadedSeverityOverrides);
+                return modifyEventSeverity(model, ev, loadedSuppressions, loadedSeverityOverrides, appliedSuppressions);
+            }
+
+            @Override
+            public List<ValidationEvent> finish() {
+                List<ValidationEvent> result = new ArrayList<>();
+                for (Suppression suppression : suppressions) {
+                    if (suppression.required() && !appliedSuppressions.contains(suppression)) {
+                        result.add(ValidationEvent.builder()
+                                .id(MODEL_ERROR)
+                                .severity(ERROR)
+                                .shapeId(null)
+                                .sourceLocation(suppression.getSourceLocation())
+                                .message("Required suppression not applied")
+                                .build());
+                    }
+                }
+                return result;
             }
         }, events);
     }
@@ -113,7 +139,7 @@ public final class ModelBasedEventDecorator {
         });
     }
 
-    private static void loadMetadataSuppressions(
+    private static void loadMetadataAndShapeValueSuppressions(
             Model model,
             List<Suppression> suppressions,
             List<ValidationEvent> events
@@ -132,13 +158,21 @@ public final class ModelBasedEventDecorator {
                 events.add(ValidationEvent.fromSourceException(e));
             }
         });
+
+        ShapeValueIndex index = ShapeValueIndex.of(model);
+        for (ShapeId shapeId : model.getShapeIds()) {
+            for (ShapeValue shapeValue : index.getShapeValues(shapeId)) {
+                suppressions.addAll(shapeValue.suppressions());
+            };
+        }
     }
 
     private static ValidationEvent modifyEventSeverity(
             Model model,
             ValidationEvent event,
             List<Suppression> suppressions,
-            List<SeverityOverride> severityOverrides
+            List<SeverityOverride> severityOverrides,
+            Set<Suppression> appliedSuppressions
     ) {
         // ERROR and SUPPRESSED events cannot be suppressed.
         if (!event.getSeverity().canSuppress()) {
@@ -153,15 +187,17 @@ public final class ModelBasedEventDecorator {
                 if (shape.hasTrait(SuppressTrait.ID)) {
                     Suppression suppression = Suppression.fromSuppressTrait(shape);
                     if (suppression.test(event)) {
+                        appliedSuppressions.add(suppression);
                         return changeSeverity(event, Severity.SUPPRESSED, suppression.getReason().orElse(null));
                     }
                 }
             }
         }
 
-        // Check metadata and manual suppressions.
+        // Check metadata, shape value and manual suppressions.
         for (Suppression suppression : suppressions) {
             if (suppression.test(event)) {
+                appliedSuppressions.add(suppression);
                 return changeSeverity(event, Severity.SUPPRESSED, suppression.getReason().orElse(null));
             }
         }
@@ -189,5 +225,9 @@ public final class ModelBasedEventDecorator {
             }
             return builder.build();
         }
+    }
+
+    private List<ValidationEvent> checkForRequiredSuppressions() {
+
     }
 }

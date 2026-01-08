@@ -101,19 +101,7 @@ public final class ModelBasedEventDecorator {
 
             @Override
             public List<ValidationEvent> finish() {
-                List<ValidationEvent> result = new ArrayList<>();
-                for (Suppression suppression : suppressions) {
-                    if (suppression.required() && !appliedSuppressions.contains(suppression)) {
-                        result.add(ValidationEvent.builder()
-                                .id(MODEL_ERROR)
-                                .severity(ERROR)
-                                .shapeId(null)
-                                .sourceLocation(suppression.getSourceLocation())
-                                .message("Required suppression not applied")
-                                .build());
-                    }
-                }
-                return result;
+                return checkForRequiredSuppressions(appliedSuppressions);
             }
         }, events);
     }
@@ -227,7 +215,19 @@ public final class ModelBasedEventDecorator {
         }
     }
 
-    private List<ValidationEvent> checkForRequiredSuppressions() {
-
+    private List<ValidationEvent> checkForRequiredSuppressions(Set<Suppression> appliedSuppressions) {
+        List<ValidationEvent> result = new ArrayList<>();
+        for (Suppression suppression : suppressions) {
+            if (suppression.required() && !appliedSuppressions.contains(suppression)) {
+                result.add(ValidationEvent.builder()
+                        .id(MODEL_ERROR)
+                        .severity(ERROR)
+                        .shapeId(null)
+                        .sourceLocation(suppression.getSourceLocation())
+                        .message("Required suppression not applied")
+                        .build());
+            }
+        }
+        return result;
     }
 }

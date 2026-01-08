@@ -27,14 +27,9 @@ public final class PatternTraitValidator extends AbstractValidator {
 
     @Override
     public List<ValidationEvent> validate(Model model) {
-        ShapeValueIndex shapeValueIndex = ShapeValueIndex.of(model);
         List<ValidationEvent> events = new ArrayList<>();
         for (Shape shape : model.getShapesWithTrait(PatternTrait.class)) {
             validatePatternTrait(events, shape);
-
-            for (ShapeValue value : shapeValueIndex.getShapeValues(shape)) {
-                validateShapeValue(events, shape, value);
-            }
         }
 
         return events;
@@ -61,22 +56,6 @@ public final class PatternTraitValidator extends AbstractValidator {
                                     + "restrictive by default and does not require modelers to understand that Smithy patterns are "
                                     + "not automatically anchored.",
                             sj)));
-        }
-    }
-
-    // Replaces PatternTraitPlugin
-    private void validateShapeValue(List<ValidationEvent> events, Shape shape, ShapeValue shapeValue) {
-        PatternTrait trait = shape.expectTrait(PatternTrait.class);
-        Node node = shapeValue.toNode();
-
-        if (node.isStringNode()) {
-            if (!trait.getPattern().matcher(node.expectStringNode().getValue()).find()) {
-                events.add(shapeValue.constraintsEvent(
-                        String.format(
-                                "String value provided for `%s` must match regular expression: %s",
-                                shape.getId(),
-                                trait.getPattern().pattern())));
-            }
         }
     }
 }

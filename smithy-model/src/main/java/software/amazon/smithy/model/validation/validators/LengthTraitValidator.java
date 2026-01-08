@@ -4,24 +4,15 @@
  */
 package software.amazon.smithy.model.validation.validators;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
 import software.amazon.smithy.model.Model;
-import software.amazon.smithy.model.knowledge.ShapeValue;
-import software.amazon.smithy.model.knowledge.ShapeValueIndex;
-import software.amazon.smithy.model.node.ArrayNode;
-import software.amazon.smithy.model.node.ObjectNode;
-import software.amazon.smithy.model.node.StringNode;
-import software.amazon.smithy.model.shapes.CollectionShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.traits.LengthTrait;
 import software.amazon.smithy.model.validation.AbstractValidator;
-import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.ValidationEvent;
-import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
 import software.amazon.smithy.utils.Pair;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class LengthTraitValidator extends AbstractValidator {
     @Override

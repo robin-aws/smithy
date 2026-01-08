@@ -154,6 +154,7 @@ public interface Trait extends FromSourceLocation, ToNode, ToShapeId {
      * @param shape The shape this trait is applied to.
      */
     default Set<ShapeValue> shapeValues(Model model, Shape shape) {
-        return Collections.singleton(new SimpleShapeValue("TraitValue", shape.getId(), toShapeId(), getIdiomaticTraitName(this), toNode()));
+        return Collections.singleton(new SimpleShapeValue("TraitValue", shape.getId(), toShapeId(),
+                "Error validating trait `" + getIdiomaticTraitName(this) + "`", toNode()));
     }
 }

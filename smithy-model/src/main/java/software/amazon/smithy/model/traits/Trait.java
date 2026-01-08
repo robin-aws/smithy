@@ -10,16 +10,13 @@ import java.util.stream.Stream;
 import software.amazon.smithy.model.FromSourceLocation;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.knowledge.ShapeValue;
-import software.amazon.smithy.model.knowledge.SimpleShapeValue;
 import software.amazon.smithy.model.loader.Prelude;
-import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.ToNode;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.shapes.ToShapeId;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Validator;
-import software.amazon.smithy.model.validation.ValidatorService;
 import software.amazon.smithy.utils.OptionalUtils;
 import software.amazon.smithy.utils.Pair;
 
@@ -50,7 +47,6 @@ import software.amazon.smithy.utils.Pair;
  * {@link Validator} interface and registering the validator through SPI.
  */
 public interface Trait extends FromSourceLocation, ToNode, ToShapeId {
-
     /**
      * Gets the shape ID of the trait.
      *
@@ -154,7 +150,16 @@ public interface Trait extends FromSourceLocation, ToNode, ToShapeId {
      * @param shape The shape this trait is applied to.
      */
     default Set<ShapeValue> shapeValues(Model model, Shape shape) {
-        return Collections.singleton(new SimpleShapeValue("TraitValue", shape.getId(), toShapeId(),
-                "Error validating trait `" + getIdiomaticTraitName(this) + "`", toNode()));
+        return Collections.singleton(ShapeValue
+                .builder()
+                .model(model)
+                .eventId("TraitValue")
+                .value(toNode())
+                .startingContext("Error validating trait `" + getIdiomaticTraitName(this) + "`")
+                .eventShapeId(shape.getId())
+                // Use WARNING for range trait errors so that a Smithy model 1.0 to 2.0 conversion can automatically
+                // suppress any errors to losslessly handle the conversion.
+                .addFeature(NodeValidationVisitor.Feature.RANGE_TRAIT_ZERO_VALUE_WARNING)
+                .build());
     }
 }

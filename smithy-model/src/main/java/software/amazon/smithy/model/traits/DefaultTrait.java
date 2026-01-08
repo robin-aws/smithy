@@ -6,10 +6,10 @@ package software.amazon.smithy.model.traits;
 
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.knowledge.ShapeValue;
-import software.amazon.smithy.model.knowledge.SimpleShapeValue;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
+import software.amazon.smithy.model.validation.NodeValidationVisitor;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -44,7 +44,17 @@ public final class DefaultTrait extends AbstractTrait {
     @Override
     public Set<ShapeValue> shapeValues(Model model, Shape shape) {
         Set<ShapeValue> result = new HashSet<>(super.shapeValues(model, shape));
-        result.add(new SimpleShapeValue("DefaultTrait", shape.toShapeId(), shape.toShapeId(), "Error validating @default trait", toNode()));
+        result.add(ShapeValue
+                .builder()
+                .model(model)
+                .eventId("DefaultTrait")
+                .value(toNode())
+                .startingContext("Error validating @default trait")
+                .eventShapeId(shape.getId())
+                // Use WARNING for range trait errors so that a Smithy model 1.0 to 2.0 conversion can automatically
+                // suppress any errors to losslessly handle the conversion.
+                .addFeature(NodeValidationVisitor.Feature.RANGE_TRAIT_ZERO_VALUE_WARNING)
+                .build());
         return result;
     }
 }

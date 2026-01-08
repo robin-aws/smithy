@@ -9,10 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceLocation;
-import software.amazon.smithy.model.knowledge.ShapeValue;
 import software.amazon.smithy.model.knowledge.SimpleShapeValue;
 import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.Node;
@@ -96,8 +94,11 @@ public final class HttpRequestTestsTrait extends AbstractTrait {
                 if (!vendorParams.isEmpty()) {
                     // Otherwise, validate the params against the shape.
                     Shape vendorParamsShape = model.expectShape(vendorParamsShapeOptional.get());
-                    result.add(new SimpleShapeValue("HttpRequestTestsInput", shape.toShapeId(), vendorParamsShapeOptional.get(),
-                            "smithy.test#httpRequestTests." + i + ".vendorParams", vendorParams));
+                    result.add(new SimpleShapeValue("HttpRequestTestsInput",
+                            shape.toShapeId(),
+                            vendorParamsShapeOptional.get(),
+                            "smithy.test#httpRequestTests." + i + ".vendorParams",
+                            vendorParams));
                 }
             }
         }

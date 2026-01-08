@@ -9,18 +9,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceLocation;
-import software.amazon.smithy.model.knowledge.ShapeValue;
 import software.amazon.smithy.model.knowledge.SimpleShapeValue;
 import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.ObjectNode;
-import software.amazon.smithy.model.shapes.OperationShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
-import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.traits.AbstractTrait;
 import software.amazon.smithy.model.traits.Trait;
 import software.amazon.smithy.utils.ListUtils;
@@ -98,8 +94,11 @@ public final class HttpResponseTestsTrait extends AbstractTrait {
                     // Otherwise, validate the params against the shape.
                     Shape vendorParamsShape = model.expectShape(vendorParamsShapeOptional.get());
                     String eventId = shape.isStructureShape() ? "HttpResponseTestsError" : "HttpResponseTestsOutput";
-                    result.add(new SimpleShapeValue(eventId, shape.toShapeId(), vendorParamsShape,
-                            "smithy.test#httpResponseTests." + i + ".vendorParams", vendorParams));
+                    result.add(new SimpleShapeValue(eventId,
+                            shape.toShapeId(),
+                            vendorParamsShape,
+                            "smithy.test#httpResponseTests." + i + ".vendorParams",
+                            vendorParams));
                 }
             }
         }

@@ -80,7 +80,13 @@ public class ShapeValueIndex implements KnowledgeIndex {
 
     private void addChildValue(ShapeValue parent, String name, Shape shape, Node value) {
         String childContext = parent.context().isEmpty() ? name : parent.context() + "." + name;
-        ShapeValue childShapeValue = new SimpleShapeValue(parent.eventId(), parent.eventShapeId(), shape, childContext, value);
+        ShapeValue childShapeValue = ShapeValue.builder()
+                .eventId(parent.eventId())
+                .eventShapeId(parent.eventShapeId())
+                .startingContext(childContext)
+                .shapeId(shape)
+                .value(value)
+                .build();
         addShapeValue(childShapeValue);
     }
 

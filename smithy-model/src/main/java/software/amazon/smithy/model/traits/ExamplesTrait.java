@@ -13,7 +13,6 @@ import java.util.Set;
 
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.knowledge.ShapeValue;
-import software.amazon.smithy.model.knowledge.SimpleShapeValue;
 import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.BooleanNode;
 import software.amazon.smithy.model.node.Node;

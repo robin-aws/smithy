@@ -1,6 +1,7 @@
 package software.amazon.smithy.model.knowledge;
 
 import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.loader.Prelude;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.StringNode;
 import software.amazon.smithy.model.shapes.MapShape;
@@ -9,14 +10,13 @@ import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.shapes.ToShapeId;
 import software.amazon.smithy.model.traits.Trait;
-import software.amazon.smithy.model.validation.Severity;
+import software.amazon.smithy.model.validation.validators.TraitValueValidator;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 public class ShapeValueIndex implements KnowledgeIndex {
@@ -31,8 +31,12 @@ public class ShapeValueIndex implements KnowledgeIndex {
     public ShapeValueIndex(Model model) {
         this.model = model;
         this.shapeValues = new HashMap<>();
+        boolean validatePrelude = model.getMetadataProperty(TraitValueValidator.VALIDATE_PRELUDE).isPresent();
 
         model.shapes().forEach(shape -> {
+            if (!validatePrelude && Prelude.isPreludeShape(shape)) {
+                return;
+            }
             for (Trait trait : shape.getAllTraits().values()) {
                 for (ShapeValue shapeValue : trait.shapeValues(model, shape)) {
                     addShapeValue(shapeValue);
@@ -61,7 +65,7 @@ public class ShapeValueIndex implements KnowledgeIndex {
                 for (Map.Entry<StringNode, Node> entry : value.expectObjectNode().getMembers().entrySet()) {
                     String key = entry.getKey().getValue();
                     addChildValue(shapeValue, key + " (map-key)", mapShape.getKey(), entry.getKey());
-                    addChildValue(shapeValue, key, mapShape.getKey(), entry.getValue());
+                    addChildValue(shapeValue, key, mapShape.getValue(), entry.getValue());
                 }
             } else if (shape.isListShape() && value.isArrayNode()) {
                 Shape memberShape = shape.asListShape().get().getMember();

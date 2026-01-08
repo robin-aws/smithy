@@ -1,13 +1,17 @@
 # Smithy Changelog
 
-## 1.65.0 (2025-12-04)
+## 1.65.0 (2025-12-09)
 
 ### Features
 
-- restXml and restJson1 should support the httpChecksum trait
-  ([#2867](https://github.com/smithy-lang/smithy/pull/2867))
+- Added CloudWatch Metric Namespace to AWS service trait.
+  ([#2877](https://github.com/smithy-lang/smithy/pull/2877))
 - Add a new package with tests for rule engine
   ([#2864](https://github.com/smithy-lang/smithy/pull/2864))
+- Fix null result handling in CFG terminal nodes
+  ([#2881](https://github.com/smithy-lang/smithy/pull/2881))
+- restXml and restJson1 should support the httpChecksum trait
+  ([#2867](https://github.com/smithy-lang/smithy/pull/2867))
 - Added a `NodeValidationVisitor` feature that enforces base64 encoding of blob
   values. ([#2838](https://github.com/smithy-lang/smithy/pull/2838))
 

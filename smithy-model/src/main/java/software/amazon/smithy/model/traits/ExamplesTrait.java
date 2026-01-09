@@ -92,7 +92,7 @@ public final class ExamplesTrait extends AbstractTrait implements ToSmithyBuilde
                             example)));
             example.getError()
                     .ifPresent(error -> result.add(
-                            createShapeValue("output", error.getShapeId(), error.getContent(), model, shape, example)));
+                            createShapeValue("error", error.getShapeId(), error.getContent(), model, shape, example)));
         }
 
         return result;

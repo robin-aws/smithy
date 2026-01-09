@@ -4,15 +4,14 @@
  */
 package software.amazon.smithy.model.validation.validators;
 
+import java.util.ArrayList;
+import java.util.List;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.traits.LengthTrait;
 import software.amazon.smithy.model.validation.AbstractValidator;
 import software.amazon.smithy.model.validation.ValidationEvent;
 import software.amazon.smithy.utils.Pair;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class LengthTraitValidator extends AbstractValidator {
     @Override

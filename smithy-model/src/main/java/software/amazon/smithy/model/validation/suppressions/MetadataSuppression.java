@@ -7,7 +7,6 @@ package software.amazon.smithy.model.validation.suppressions;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Predicate;
-
 import software.amazon.smithy.model.SourceLocation;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.ObjectNode;

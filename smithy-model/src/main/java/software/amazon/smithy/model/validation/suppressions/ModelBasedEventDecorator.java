@@ -4,12 +4,14 @@
  */
 package software.amazon.smithy.model.validation.suppressions;
 
+import static software.amazon.smithy.model.validation.Severity.ERROR;
+import static software.amazon.smithy.model.validation.Validator.MODEL_ERROR;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceException;
 import software.amazon.smithy.model.knowledge.ShapeValue;
@@ -23,9 +25,6 @@ import software.amazon.smithy.model.validation.ValidatedResult;
 import software.amazon.smithy.model.validation.ValidationEvent;
 import software.amazon.smithy.model.validation.ValidationEventDecorator;
 import software.amazon.smithy.utils.SmithyUnstableApi;
-
-import static software.amazon.smithy.model.validation.Severity.ERROR;
-import static software.amazon.smithy.model.validation.Validator.MODEL_ERROR;
 
 /**
  * Creates a {@link ValidationEventDecorator} that applies custom suppressions, custom severity overrides,
@@ -85,7 +84,12 @@ public final class ModelBasedEventDecorator {
 
         // Modify severities and overrides of each encountered event.
         for (int i = 0; i < events.size(); i++) {
-            events.set(i, modifyEventSeverity(model, events.get(i), loadedSuppressions, loadedSeverityOverrides, appliedSuppressions));
+            events.set(i,
+                    modifyEventSeverity(model,
+                            events.get(i),
+                            loadedSuppressions,
+                            loadedSeverityOverrides,
+                            appliedSuppressions));
         }
 
         return new ValidatedResult<>(new ValidationEventDecorator() {
@@ -151,7 +155,7 @@ public final class ModelBasedEventDecorator {
         for (ShapeId shapeId : model.getShapeIds()) {
             for (ShapeValue shapeValue : index.getShapeValues(shapeId)) {
                 suppressions.addAll(shapeValue.suppressions());
-            };
+            } ;
         }
     }
 

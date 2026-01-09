@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.knowledge.ShapeValue;
 import software.amazon.smithy.model.node.ArrayNode;
@@ -78,11 +77,22 @@ public final class ExamplesTrait extends AbstractTrait implements ToSmithyBuilde
         OperationShape operationShape = shape.asOperationShape().get();
 
         for (Example example : examples) {
-            result.add(createShapeValue("input", operationShape.getInputShape(), example.getInput(), model, shape, example));
-            example.getOutput().ifPresent(output ->
-                    result.add(createShapeValue("output", operationShape.getOutputShape(), output, model, shape, example)));
-            example.getError().ifPresent(error ->
-                    result.add(createShapeValue("output", error.getShapeId(), error.getContent(), model, shape, example)));
+            result.add(createShapeValue("input",
+                    operationShape.getInputShape(),
+                    example.getInput(),
+                    model,
+                    shape,
+                    example));
+            example.getOutput()
+                    .ifPresent(output -> result.add(createShapeValue("output",
+                            operationShape.getOutputShape(),
+                            output,
+                            model,
+                            shape,
+                            example)));
+            example.getError()
+                    .ifPresent(error -> result.add(
+                            createShapeValue("output", error.getShapeId(), error.getContent(), model, shape, example)));
         }
 
         return result;

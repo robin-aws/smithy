@@ -4,15 +4,14 @@
  */
 package software.amazon.smithy.model.traits;
 
+import java.util.HashSet;
+import java.util.Set;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.knowledge.ShapeValue;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Provides a default value for a shape or member.

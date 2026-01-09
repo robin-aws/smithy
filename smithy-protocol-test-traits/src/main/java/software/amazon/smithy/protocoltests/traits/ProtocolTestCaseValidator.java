@@ -18,9 +18,7 @@ import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.traits.Trait;
 import software.amazon.smithy.model.validation.AbstractValidator;
-import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.ValidationEvent;
-import software.amazon.smithy.model.validation.node.TimestampValidationStrategy;
 import software.amazon.smithy.utils.ListUtils;
 
 /**
@@ -91,24 +89,11 @@ abstract class ProtocolTestCaseValidator<T extends Trait> extends AbstractValida
                     events.add(warning(shape,
                             trait,
                             "Protocol test case defined a `vendorParamsShape` but no `vendorParams`"));
-                } else {
-                    // Otherwise, validate the params against the shape.
-                    //                    Shape vendorParamsShape = model.expectShape(vendorParamsShapeOptional.get());
-                    //                    NodeValidationVisitor vendorParamsValidator = createVisitor(vendorParams,
-                    //                            model,
-                    //                            shape,
-                    //                            i,
-                    //                            ".vendorParams");
-                    //                    events.addAll(vendorParamsShape.accept(vendorParamsValidator));
                 }
             }
 
             StructureShape struct = getStructure(shape, operationIndex);
-            if (struct != null) {
-                // Validate the params for the test case.
-                NodeValidationVisitor validator = createVisitor(testCase.getParams(), model, shape, i, ".params");
-                events.addAll(struct.accept(validator));
-            } else if (!testCase.getParams().isEmpty() && isValidatedBy(shape)) {
+            if (struct == null && !testCase.getParams().isEmpty() && isValidatedBy(shape)) {
                 events.add(error(shape,
                         trait,
                         String.format(
@@ -120,24 +105,6 @@ abstract class ProtocolTestCaseValidator<T extends Trait> extends AbstractValida
         }
 
         return events;
-    }
-
-    private NodeValidationVisitor createVisitor(
-            ObjectNode value,
-            Model model,
-            Shape shape,
-            int position,
-            String contextSuffix
-    ) {
-        return NodeValidationVisitor.builder()
-                .model(model)
-                .eventShapeId(shape.getId())
-                .value(value)
-                .startingContext(traitId + "." + position + contextSuffix)
-                .eventId(getName())
-                .timestampValidationStrategy(TimestampValidationStrategy.EPOCH_SECONDS)
-                .addFeature(NodeValidationVisitor.Feature.ALLOW_OPTIONAL_NULLS)
-                .build();
     }
 
     private List<ValidationEvent> validateMediaType(Shape shape, Trait trait, HttpMessageTestCase test) {

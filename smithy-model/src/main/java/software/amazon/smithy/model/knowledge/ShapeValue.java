@@ -1,5 +1,13 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package software.amazon.smithy.model.knowledge;
 
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.ToNode;
@@ -11,11 +19,6 @@ import software.amazon.smithy.model.validation.ValidationEvent;
 import software.amazon.smithy.model.validation.node.TimestampValidationStrategy;
 import software.amazon.smithy.model.validation.suppressions.Suppression;
 import software.amazon.smithy.utils.SmithyBuilder;
-
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
 
 public class ShapeValue implements ToNode, ToShapeId {
 
@@ -35,7 +38,8 @@ public class ShapeValue implements ToNode, ToShapeId {
         this.contextText = builder.contextText;
         this.value = builder.value;
         this.timestampValidationStrategy = builder.timestampValidationStrategy;
-        this.features = builder.features.isEmpty() ? EnumSet.noneOf(NodeValidationVisitor.Feature.class) : EnumSet.copyOf(builder.features);
+        this.features = builder.features.isEmpty() ? EnumSet.noneOf(NodeValidationVisitor.Feature.class)
+                : EnumSet.copyOf(builder.features);
         this.suppressions = builder.suppressions;
     }
 

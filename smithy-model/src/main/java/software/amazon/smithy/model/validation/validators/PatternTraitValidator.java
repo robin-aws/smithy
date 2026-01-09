@@ -4,15 +4,14 @@
  */
 package software.amazon.smithy.model.validation.validators;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.traits.PatternTrait;
 import software.amazon.smithy.model.validation.AbstractValidator;
 import software.amazon.smithy.model.validation.ValidationEvent;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringJoiner;
 
 /**
  * Emits a validation event if a pattern trait is not anchored.

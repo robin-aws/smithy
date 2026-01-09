@@ -10,7 +10,6 @@ import software.amazon.smithy.model.SourceLocation;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.ToNode;
 import software.amazon.smithy.model.shapes.ShapeId;
-import software.amazon.smithy.model.validation.ValidatorService;
 
 /**
  * Base implementation of traits.

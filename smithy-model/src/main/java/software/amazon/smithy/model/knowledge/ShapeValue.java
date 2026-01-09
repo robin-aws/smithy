@@ -102,7 +102,6 @@ public class ShapeValue implements ToNode, ToShapeId {
     }
 
     public static final class Builder implements SmithyBuilder<ShapeValue> {
-        private Model model;
         private String eventId;
         private ShapeId eventShapeId;
         private ShapeId shapeId;
@@ -111,18 +110,6 @@ public class ShapeValue implements ToNode, ToShapeId {
         private TimestampValidationStrategy timestampValidationStrategy = TimestampValidationStrategy.FORMAT;
         private final Set<NodeValidationVisitor.Feature> features = new HashSet<>();
         private final Set<Suppression> suppressions = new HashSet<>();
-
-        /**
-         * Sets the <strong>required</strong> model to use when traversing
-         * walking shapes during validation.
-         *
-         * @param model Model that contains shapes to validate.
-         * @return Returns the builder.
-         */
-        public Builder model(Model model) {
-            this.model = model;
-            return this;
-        }
 
         public Builder shapeId(ToShapeId shapeId) {
             this.shapeId = shapeId.toShapeId();

@@ -45,7 +45,6 @@ public final class DefaultTrait extends AbstractTrait {
         Set<ShapeValue> result = new HashSet<>(super.shapeValues(model, shape));
         result.add(ShapeValue
                 .builder()
-                .model(model)
                 .eventId("DefaultTrait")
                 .value(toNode())
                 .startingContext("Error validating @default trait")

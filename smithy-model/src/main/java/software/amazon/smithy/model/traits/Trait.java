@@ -152,7 +152,6 @@ public interface Trait extends FromSourceLocation, ToNode, ToShapeId {
     default Set<ShapeValue> shapeValues(Model model, Shape shape) {
         return Collections.singleton(ShapeValue
                 .builder()
-                .model(model)
                 .eventId("TraitValue")
                 .value(toNode())
                 .startingContext("Error validating trait `" + getIdiomaticTraitName(this) + "`")

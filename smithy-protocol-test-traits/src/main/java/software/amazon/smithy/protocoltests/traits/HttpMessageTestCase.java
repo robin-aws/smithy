@@ -101,7 +101,6 @@ public abstract class HttpMessageTestCase implements ToNode, Tagged {
 
     public ShapeValue getParamsShapeValue(Model model, String eventId, Shape shape, String context, Shape paramsShape) {
         return ShapeValue.builder()
-                .model(model)
                 .eventShapeId(shape.getId())
                 .shapeId(paramsShape)
                 .value(getParams())
@@ -124,7 +123,6 @@ public abstract class HttpMessageTestCase implements ToNode, Tagged {
         return getVendorParamsShape().map(vendorParamsShape -> {
             model.expectShape(vendorParamsShape);
             return ShapeValue.builder()
-                    .model(model)
                     .eventShapeId(shape.getId())
                     .shapeId(vendorParamsShape)
                     .value(getVendorParams())

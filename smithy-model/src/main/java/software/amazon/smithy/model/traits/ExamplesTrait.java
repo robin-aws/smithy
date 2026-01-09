@@ -107,7 +107,6 @@ public final class ExamplesTrait extends AbstractTrait implements ToSmithyBuilde
             ExamplesTrait.Example example
     ) {
         ShapeValue.Builder builder = ShapeValue.builder()
-                .model(model)
                 .eventShapeId(operationShape)
                 .shapeId(shape)
                 .value(value)

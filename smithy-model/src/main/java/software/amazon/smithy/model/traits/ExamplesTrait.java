@@ -21,6 +21,8 @@ import software.amazon.smithy.model.node.ToNode;
 import software.amazon.smithy.model.shapes.OperationShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
+import software.amazon.smithy.model.shapes.ToShapeId;
+import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.validators.ExamplesTraitValidator;
 import software.amazon.smithy.utils.SmithyBuilder;
 import software.amazon.smithy.utils.ToSmithyBuilder;
@@ -76,22 +78,35 @@ public final class ExamplesTrait extends AbstractTrait implements ToSmithyBuilde
         OperationShape operationShape = shape.asOperationShape().get();
 
         for (Example example : examples) {
-            // TODO: Specify ALLOW_CONSTRAINT_ERRORS
-            result.add(new SimpleShapeValue("ExamplesTrait", shape.toShapeId(), operationShape.getInputShape(),
-                    shapeValueContext(example, "input"), example.getInput()));
+            result.add(createShapeValue("input", operationShape.getInputShape(), example.getInput(), model, shape, example));
             example.getOutput().ifPresent(output ->
-                    result.add(new SimpleShapeValue("ExamplesTrait", shape.toShapeId(), operationShape.getOutputShape(),
-                            shapeValueContext(example, "output"), output)));
+                    result.add(createShapeValue("output", operationShape.getOutputShape(), output, model, shape, example)));
             example.getError().ifPresent(error ->
-                    result.add(new SimpleShapeValue("ExamplesTrait", shape.toShapeId(), error.getShapeId(),
-                            shapeValueContext(example, "error"), error.toNode())));
+                    result.add(createShapeValue("output", error.getShapeId(), error.getContent(), model, shape, example)));
         }
 
         return result;
     }
 
-    private String shapeValueContext(Example example, String name) {
-        return "Example " + name + " of `" + example.getTitle() + "`";
+    private ShapeValue createShapeValue(
+            String name,
+            ToShapeId shape,
+            ObjectNode value,
+            Model model,
+            Shape operationShape,
+            ExamplesTrait.Example example
+    ) {
+        ShapeValue.Builder builder = ShapeValue.builder()
+                .model(model)
+                .eventShapeId(operationShape)
+                .shapeId(shape)
+                .value(value)
+                .startingContext("Example " + name + " of `" + example.getTitle() + "`")
+                .eventId("ExamplesTrait");
+        if (example.getAllowConstraintErrors()) {
+            builder.addFeature(NodeValidationVisitor.Feature.ALLOW_CONSTRAINT_ERRORS);
+        }
+        return builder.build();
     }
 
     @Override

@@ -7,12 +7,17 @@ package software.amazon.smithy.protocoltests.traits;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.knowledge.ShapeValue;
 import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.node.StringNode;
 import software.amazon.smithy.model.node.ToNode;
+import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
+import software.amazon.smithy.model.validation.NodeValidationVisitor;
+import software.amazon.smithy.model.validation.node.TimestampValidationStrategy;
 import software.amazon.smithy.utils.BuilderRef;
 import software.amazon.smithy.utils.SmithyBuilder;
 import software.amazon.smithy.utils.Tagged;
@@ -94,12 +99,41 @@ public abstract class HttpMessageTestCase implements ToNode, Tagged {
         return params;
     }
 
+    public ShapeValue getParamsShapeValue(Model model, String eventId, Shape shape, String context, Shape paramsShape) {
+        return ShapeValue.builder()
+                .model(model)
+                .eventShapeId(shape.getId())
+                .shapeId(paramsShape)
+                .value(getParams())
+                .startingContext(context + ".params")
+                .eventId(eventId)
+                .timestampValidationStrategy(TimestampValidationStrategy.EPOCH_SECONDS)
+                .addFeature(NodeValidationVisitor.Feature.ALLOW_OPTIONAL_NULLS)
+                .build();
+    }
+
     public Optional<ShapeId> getVendorParamsShape() {
         return Optional.ofNullable(vendorParamsShape);
     }
 
     public ObjectNode getVendorParams() {
         return vendorParams;
+    }
+
+    public Optional<ShapeValue> getVendorParamsShapeValue(Model model, String eventId, Shape shape, String context) {
+        return getVendorParamsShape().map(vendorParamsShape -> {
+            model.expectShape(vendorParamsShape);
+            return ShapeValue.builder()
+                    .model(model)
+                    .eventShapeId(shape.getId())
+                    .shapeId(vendorParamsShape)
+                    .value(getVendorParams())
+                    .startingContext(context + ".vendorParams")
+                    .eventId(eventId)
+                    .timestampValidationStrategy(TimestampValidationStrategy.EPOCH_SECONDS)
+                    .addFeature(NodeValidationVisitor.Feature.ALLOW_OPTIONAL_NULLS)
+                    .build();
+        });
     }
 
     public Map<String, String> getHeaders() {

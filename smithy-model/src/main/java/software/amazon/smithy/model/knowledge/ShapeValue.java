@@ -9,10 +9,13 @@ import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.ValidationEvent;
 import software.amazon.smithy.model.validation.node.TimestampValidationStrategy;
+import software.amazon.smithy.model.validation.suppressions.Suppression;
 import software.amazon.smithy.utils.SmithyBuilder;
 
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public class ShapeValue implements ToNode, ToShapeId {
 
@@ -21,7 +24,9 @@ public class ShapeValue implements ToNode, ToShapeId {
     private final ShapeId shapeId;
     private final String contextText;
     private final Node value;
+    private final TimestampValidationStrategy timestampValidationStrategy;
     private final EnumSet<NodeValidationVisitor.Feature> features;
+    private final Set<Suppression> suppressions;
 
     public ShapeValue(Builder builder) {
         this.eventId = builder.eventId;
@@ -29,7 +34,9 @@ public class ShapeValue implements ToNode, ToShapeId {
         this.shapeId = builder.shapeId;
         this.contextText = builder.contextText;
         this.value = builder.value;
-        this.features = EnumSet.copyOf(builder.features);
+        this.timestampValidationStrategy = builder.timestampValidationStrategy;
+        this.features = builder.features.isEmpty() ? EnumSet.noneOf(NodeValidationVisitor.Feature.class) : EnumSet.copyOf(builder.features);
+        this.suppressions = builder.suppressions;
     }
 
     public String eventId() {
@@ -53,8 +60,20 @@ public class ShapeValue implements ToNode, ToShapeId {
         return value;
     }
 
+    public TimestampValidationStrategy timestampValidationStrategy() {
+        return timestampValidationStrategy;
+    }
+
+    public Set<NodeValidationVisitor.Feature> features() {
+        return features;
+    }
+
     public boolean hasFeature(NodeValidationVisitor.Feature feature) {
         return features.contains(feature);
+    }
+
+    public Set<Suppression> suppressions() {
+        return suppressions;
     }
 
     public ValidationEvent constraintsEvent(String message) {
@@ -86,7 +105,8 @@ public class ShapeValue implements ToNode, ToShapeId {
         private String contextText;
         private Node value;
         private TimestampValidationStrategy timestampValidationStrategy = TimestampValidationStrategy.FORMAT;
-        private EnumSet<NodeValidationVisitor.Feature> features;
+        private final Set<NodeValidationVisitor.Feature> features = new HashSet<>();
+        private final Set<Suppression> suppressions = new HashSet<>();
 
         /**
          * Sets the <strong>required</strong> model to use when traversing
@@ -146,8 +166,8 @@ public class ShapeValue implements ToNode, ToShapeId {
          * @param eventShapeId Shape ID to set on every validation event.
          * @return Returns the builder.
          */
-        public Builder eventShapeId(ShapeId eventShapeId) {
-            this.eventShapeId = eventShapeId;
+        public Builder eventShapeId(ToShapeId eventShapeId) {
+            this.eventShapeId = eventShapeId.toShapeId();
             return this;
         }
 
@@ -188,6 +208,11 @@ public class ShapeValue implements ToNode, ToShapeId {
          */
         public Builder addFeature(NodeValidationVisitor.Feature feature) {
             this.features.add(feature);
+            return this;
+        }
+
+        public Builder addSuppression(Suppression suppression) {
+            this.suppressions.add(suppression);
             return this;
         }
 

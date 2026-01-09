@@ -37,15 +37,19 @@ public class ShapeValueValidator extends AbstractValidator {
     }
 
     private void validateShapeValue(List<ValidationEvent> events, Model model, Shape shape, ShapeValue shapeValue) {
-        NodeValidationVisitor visitor = NodeValidationVisitor.builder()
+        NodeValidationVisitor.Builder builder = NodeValidationVisitor.builder()
                 .model(model)
                 .value(shapeValue.toNode())
                 .eventShapeId(shapeValue.eventShapeId())
                 .eventId(shapeValue.eventId())
                 .startingContext(shapeValue.context())
-                .recurse(false)
-                .build();
-        events.addAll(shape.accept(visitor));
+                .timestampValidationStrategy(shapeValue.timestampValidationStrategy())
+                .recurse(false);
+        shapeValue.features().forEach(builder::addFeature);
+        NodeValidationVisitor visitor = builder.build();
+
+        Shape shapeValueShape = model.expectShape(shapeValue.toShapeId());
+        events.addAll(shapeValueShape.accept(visitor));
 
 //        Node node = shapeValue.toNode();
 //

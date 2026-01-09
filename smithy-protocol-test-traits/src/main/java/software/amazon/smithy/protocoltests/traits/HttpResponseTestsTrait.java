@@ -6,15 +6,14 @@ package software.amazon.smithy.protocoltests.traits;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceLocation;
-import software.amazon.smithy.model.knowledge.SimpleShapeValue;
+import software.amazon.smithy.model.knowledge.OperationIndex;
+import software.amazon.smithy.model.knowledge.ShapeValue;
 import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.Node;
-import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.traits.AbstractTrait;
@@ -61,7 +60,7 @@ public final class HttpResponseTestsTrait extends AbstractTrait {
      * Gets all test cases that apply to a client or server.
      *
      * <p>Test cases that define an {@code appliesTo} member are tests that
-     * should only be implemented by clients or servers. Is is assumed that
+     * should only be implemented by clients or servers. It is assumed that
      * test cases that do not define an {@code appliesTo} member are
      * implemented by both client and server implementations.
      *
@@ -83,24 +82,18 @@ public final class HttpResponseTestsTrait extends AbstractTrait {
     public Set<ShapeValue> shapeValues(Model model, Shape shape) {
         Set<ShapeValue> result = new HashSet<>(super.shapeValues(model, shape));
 
+        OperationIndex operationIndex = OperationIndex.of(model);
+        String eventId = shape.isStructureShape() ? "HttpResponseTestsError" : "HttpResponseTestsOutput";
+        Shape paramsShape = shape.isStructureShape() ? shape : operationIndex.expectOutputShape(shape);
+
         for (int i = 0; i < testCases.size(); i++) {
             HttpMessageTestCase testCase = testCases.get(i);
+            String context = "smithy.test#httpResponseTests." + i;
+
+            result.add(testCase.getParamsShapeValue(model, eventId, shape, context, paramsShape));
 
             // Validate the vendorParams for the test case if we have a shape defined.
-            Optional<ShapeId> vendorParamsShapeOptional = testCase.getVendorParamsShape();
-            ObjectNode vendorParams = testCase.getVendorParams();
-            if (vendorParamsShapeOptional.isPresent()) {
-                if (!vendorParams.isEmpty()) {
-                    // Otherwise, validate the params against the shape.
-                    Shape vendorParamsShape = model.expectShape(vendorParamsShapeOptional.get());
-                    String eventId = shape.isStructureShape() ? "HttpResponseTestsError" : "HttpResponseTestsOutput";
-                    result.add(new SimpleShapeValue(eventId,
-                            shape.toShapeId(),
-                            vendorParamsShape,
-                            "smithy.test#httpResponseTests." + i + ".vendorParams",
-                            vendorParams));
-                }
-            }
+            testCase.getVendorParamsShapeValue(model, eventId, shape, context).ifPresent(result::add);
         }
 
         return result;

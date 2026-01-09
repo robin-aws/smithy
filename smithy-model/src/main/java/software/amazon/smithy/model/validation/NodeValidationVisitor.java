@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.Set;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceLocation;

@@ -4,11 +4,17 @@
  */
 package software.amazon.smithy.protocoltests.traits;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceLocation;
+import software.amazon.smithy.model.knowledge.OperationIndex;
+import software.amazon.smithy.model.knowledge.ShapeValue;
 import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.Node;
+import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.traits.AbstractTrait;
 import software.amazon.smithy.model.traits.Trait;
@@ -70,5 +76,25 @@ public final class HttpRequestTestsTrait extends AbstractTrait {
     @Override
     protected Node createNode() {
         return getTestCases().stream().collect(ArrayNode.collect(getSourceLocation()));
+    }
+
+    @Override
+    public Set<ShapeValue> shapeValues(Model model, Shape shape) {
+        Set<ShapeValue> result = new HashSet<>(super.shapeValues(model, shape));
+        OperationIndex operationIndex = OperationIndex.of(model);
+        Shape inputShape = operationIndex.expectInputShape(shape);
+
+        for (int i = 0; i < testCases.size(); i++) {
+            HttpMessageTestCase testCase = testCases.get(i);
+            String eventId = "HttpRequestTestsInput";
+            String context = "smithy.test#httpRequestTests." + i;
+
+            result.add(testCase.getParamsShapeValue(model, eventId, shape, context, inputShape));
+
+            // Validate the vendorParams for the test case if we have a shape defined.
+            testCase.getVendorParamsShapeValue(model, eventId, shape, context).ifPresent(result::add);
+        }
+
+        return result;
     }
 }

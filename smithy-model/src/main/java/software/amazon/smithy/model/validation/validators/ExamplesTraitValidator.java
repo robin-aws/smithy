@@ -10,14 +10,12 @@ import java.util.Optional;
 import java.util.Set;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.knowledge.TopDownIndex;
-import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.shapes.OperationShape;
 import software.amazon.smithy.model.shapes.ServiceShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.traits.ExamplesTrait;
 import software.amazon.smithy.model.validation.AbstractValidator;
-import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.ValidationEvent;
 
 /**
@@ -44,7 +42,6 @@ public final class ExamplesTraitValidator extends AbstractValidator {
             boolean isErrorDefined = example.getError().isPresent();
 
             model.getShape(shape.getInputShape()).ifPresent(input -> {
-                NodeValidationVisitor validator;
                 if (example.getAllowConstraintErrors() && !isErrorDefined) {
                     events.add(error(shape,
                             trait,
@@ -52,9 +49,6 @@ public final class ExamplesTraitValidator extends AbstractValidator {
                                     "Example: `%s` has allowConstraintErrors enabled, so error must be defined.",
                                     example.getTitle())));
                 }
-                validator = createVisitor("input", example.getInput(), model, shape, example);
-                List<ValidationEvent> inputValidationEvents = input.accept(validator);
-                events.addAll(inputValidationEvents);
             });
 
             if (isOutputDefined && isErrorDefined) {
@@ -63,32 +57,14 @@ public final class ExamplesTraitValidator extends AbstractValidator {
                         String.format(
                                 "Example: `%s` has both output and error defined, only one should be present.",
                                 example.getTitle())));
-            } else if (isOutputDefined) {
-                model.getShape(shape.getOutputShape()).ifPresent(output -> {
-                    NodeValidationVisitor validator = createVisitor(
-                            "output",
-                            example.getOutput().get(),
-                            model,
-                            shape,
-                            example);
-                    events.addAll(output.accept(validator));
-                });
-            } else if (isErrorDefined) {
+            } else if (isOutputDefined) {} else if (isErrorDefined) {
                 ExamplesTrait.ErrorExample errorExample = example.getError().get();
                 Optional<Shape> errorShape = model.getShape(errorExample.getShapeId());
                 if (errorShape.isPresent() && (
                 // The error is directly bound to the operation.
                 shape.getErrorsSet().contains(errorExample.getShapeId())
                         // The error is bound to all services that contain the operation.
-                        || servicesContainError(model, shape, errorExample.getShapeId()))) {
-                    NodeValidationVisitor validator = createVisitor(
-                            "error",
-                            errorExample.getContent(),
-                            model,
-                            shape,
-                            example);
-                    events.addAll(errorShape.get().accept(validator));
-                } else {
+                        || servicesContainError(model, shape, errorExample.getShapeId()))) {} else {
                     events.add(error(shape,
                             trait,
                             String.format(
@@ -124,24 +100,5 @@ public final class ExamplesTraitValidator extends AbstractValidator {
         }
 
         return true;
-    }
-
-    private NodeValidationVisitor createVisitor(
-            String name,
-            ObjectNode value,
-            Model model,
-            Shape shape,
-            ExamplesTrait.Example example
-    ) {
-        NodeValidationVisitor.Builder builder = NodeValidationVisitor.builder()
-                .model(model)
-                .eventShapeId(shape.getId())
-                .value(value)
-                .startingContext("Example " + name + " of `" + example.getTitle() + "`")
-                .eventId(getName());
-        if (example.getAllowConstraintErrors()) {
-            builder.addFeature(NodeValidationVisitor.Feature.ALLOW_CONSTRAINT_ERRORS);
-        }
-        return builder.build();
     }
 }

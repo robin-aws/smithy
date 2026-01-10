@@ -4,6 +4,8 @@
  */
 package software.amazon.smithy.model.validation;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -43,6 +45,10 @@ public interface ValidationEventDecorator {
      */
     ValidationEvent decorate(ValidationEvent ev);
 
+    default List<ValidationEvent> finish() {
+        return Collections.emptyList();
+    }
+
     /**
      * Creates a decorator composed of one or more decorators.
      *
@@ -73,6 +79,15 @@ public interface ValidationEventDecorator {
                         }
                     }
                     return decoratedEvent;
+                }
+
+                @Override
+                public List<ValidationEvent> finish() {
+                    List<ValidationEvent> result = new ArrayList<>();
+                    for (ValidationEventDecorator decorator : decorators) {
+                        result.addAll(decorator.finish());
+                    }
+                    return result;
                 }
             };
         }

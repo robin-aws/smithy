@@ -5,15 +5,22 @@
 package software.amazon.smithy.model.traits;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.knowledge.ShapeValue;
 import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.BooleanNode;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.node.ToNode;
+import software.amazon.smithy.model.shapes.OperationShape;
+import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
+import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.validators.ExamplesTraitValidator;
 import software.amazon.smithy.utils.SmithyBuilder;
 import software.amazon.smithy.utils.ToSmithyBuilder;
@@ -60,6 +67,55 @@ public final class ExamplesTrait extends AbstractTrait implements ToSmithyBuilde
     @Override
     public int hashCode() {
         return Objects.hash(toShapeId(), examples);
+    }
+
+    @Override
+    public Set<ShapeValue> shapeValues(Model model, Shape shape) {
+        Set<ShapeValue> result = new HashSet<>(super.shapeValues(model, shape));
+
+        OperationShape operationShape = shape.asOperationShape().get();
+
+        for (Example example : examples) {
+            result.add(createShapeValue("input",
+                    model.expectShape(operationShape.getInputShape()),
+                    example.getInput(),
+                    shape,
+                    example));
+            example.getOutput()
+                    .ifPresent(output -> result.add(createShapeValue("output",
+                            model.expectShape(operationShape.getOutputShape()),
+                            output,
+                            shape,
+                            example)));
+            example.getError()
+                    .ifPresent(error -> result.add(
+                            createShapeValue("error",
+                                    model.expectShape(error.getShapeId()),
+                                    error.getContent(),
+                                    shape,
+                                    example)));
+        }
+
+        return result;
+    }
+
+    private ShapeValue createShapeValue(
+            String name,
+            Shape shape,
+            ObjectNode value,
+            Shape operationShape,
+            ExamplesTrait.Example example
+    ) {
+        ShapeValue.Builder builder = ShapeValue.builder()
+                .eventShapeId(operationShape)
+                .shapeId(shape)
+                .value(value)
+                .startingContext("Example " + name + " of `" + example.getTitle() + "`")
+                .eventId("ExamplesTrait");
+        if (example.getAllowConstraintErrors()) {
+            builder.addFeature(NodeValidationVisitor.Feature.ALLOW_CONSTRAINT_ERRORS);
+        }
+        return builder.build();
     }
 
     @Override

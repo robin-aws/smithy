@@ -4,6 +4,7 @@
  */
 package software.amazon.smithy.model.validation.suppressions;
 
+import software.amazon.smithy.model.SourceLocation;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.traits.SuppressTrait;
 import software.amazon.smithy.model.validation.ValidationEvent;
@@ -34,5 +35,10 @@ final class TraitSuppression implements Suppression {
         }
 
         return false;
+    }
+
+    @Override
+    public SourceLocation getSourceLocation() {
+        return trait.getSourceLocation();
     }
 }

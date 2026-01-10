@@ -72,12 +72,14 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
     private String startingContext;
     private NodeValidatorPlugin.Context validationContext;
     private final NullableIndex nullableIndex;
+    private final boolean recurse;
 
     private NodeValidationVisitor(Builder builder) {
         this.model = SmithyBuilder.requiredState("model", builder.model);
         this.nullableIndex = NullableIndex.of(model);
         this.validationContext = new NodeValidatorPlugin.Context(model, Feature.enumSet(builder.features));
         this.timestampValidationStrategy = builder.timestampValidationStrategy;
+        this.recurse = builder.recurse;
         setValue(SmithyBuilder.requiredState("value", builder.value));
         setStartingContext(builder.contextText);
         setValue(builder.value);
@@ -311,9 +313,11 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
                 .map(array -> {
                     MemberShape member = shape.getMember();
                     List<ValidationEvent> events = applyPlugins(shape);
-                    // Each element creates a context with a numeric index (e.g., "foo.0.baz", "foo.1.baz", etc.).
-                    for (int i = 0; i < array.getElements().size(); i++) {
-                        events.addAll(member.accept(traverse(String.valueOf(i), array.getElements().get(i))));
+                    if (recurse) {
+                        // Each element creates a context with a numeric index (e.g., "foo.0.baz", "foo.1.baz", etc.).
+                        for (int i = 0; i < array.getElements().size(); i++) {
+                            events.addAll(member.accept(traverse(String.valueOf(i), array.getElements().get(i))));
+                        }
                     }
                     return events;
                 })
@@ -325,10 +329,12 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
         return value.asObjectNode()
                 .map(object -> {
                     List<ValidationEvent> events = applyPlugins(shape);
-                    for (Map.Entry<StringNode, Node> entry : object.getMembers().entrySet()) {
-                        String key = entry.getKey().getValue();
-                        events.addAll(traverse(key + " (map-key)", entry.getKey()).memberShape(shape.getKey()));
-                        events.addAll(traverse(key, entry.getValue()).memberShape(shape.getValue()));
+                    if (recurse) {
+                        for (Map.Entry<StringNode, Node> entry : object.getMembers().entrySet()) {
+                            String key = entry.getKey().getValue();
+                            events.addAll(traverse(key + " (map-key)", entry.getKey()).memberShape(shape.getKey()));
+                            events.addAll(traverse(key, entry.getValue()).memberShape(shape.getValue()));
+                        }
                     }
                     return events;
                 })
@@ -348,7 +354,9 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
                         if (!members.containsKey(entryKey)) {
                             events.add(unknownMember(entryKey, shape, Severity.WARNING));
                         } else {
-                            events.addAll(traverse(entryKey, entryValue).memberShape(members.get(entryKey)));
+                            if (recurse) {
+                                events.addAll(traverse(entryKey, entryValue).memberShape(members.get(entryKey)));
+                            }
                         }
                     }
 
@@ -383,7 +391,9 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
                             if (!members.containsKey(entryKey)) {
                                 events.add(unknownMember(entryKey, shape, Severity.ERROR));
                             } else {
-                                events.addAll(traverse(entryKey, entryValue).memberShape(members.get(entryKey)));
+                                if (recurse) {
+                                    events.addAll(traverse(entryKey, entryValue).memberShape(members.get(entryKey)));
+                                }
                             }
                         }
                     }
@@ -540,6 +550,7 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
         private Model model;
         private TimestampValidationStrategy timestampValidationStrategy = TimestampValidationStrategy.FORMAT;
         private final Set<Feature> features = new HashSet<>();
+        private boolean recurse = true;
 
         Builder() {}
 
@@ -638,6 +649,11 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
          */
         public Builder addFeature(Feature feature) {
             this.features.add(feature);
+            return this;
+        }
+
+        public Builder recurse(boolean recurse) {
+            this.recurse = recurse;
             return this;
         }
 

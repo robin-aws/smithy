@@ -4,13 +4,18 @@
  */
 package software.amazon.smithy.model.traits;
 
+import java.util.Collections;
+import java.util.Set;
 import java.util.stream.Stream;
 import software.amazon.smithy.model.FromSourceLocation;
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.knowledge.ShapeValue;
 import software.amazon.smithy.model.loader.Prelude;
 import software.amazon.smithy.model.node.ToNode;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.shapes.ToShapeId;
+import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Validator;
 import software.amazon.smithy.utils.OptionalUtils;
 import software.amazon.smithy.utils.Pair;
@@ -134,5 +139,27 @@ public interface Trait extends FromSourceLocation, ToNode, ToShapeId {
      */
     static String makeAbsoluteName(String traitName, String defaultNamespace) {
         return traitName.contains("#") ? traitName : defaultNamespace + "#" + traitName;
+    }
+
+    /**
+     * Produces the set of {@link ShapeValue}s in this trait.
+     * Every trait itself is a shape value,
+     * but some traits contain other Node values
+     * that are values of other shapes in the model.
+     *
+     * @param shape The shape this trait is applied to.
+     */
+    default Set<ShapeValue> shapeValues(Model model, Shape shape) {
+        return Collections.singleton(ShapeValue
+                .builder()
+                .eventId("TraitValue")
+                .shapeId(toShapeId())
+                .value(toNode())
+                .startingContext("Error validating trait `" + getIdiomaticTraitName(this) + "`")
+                .eventShapeId(shape.getId())
+                // Use WARNING for range trait errors so that a Smithy model 1.0 to 2.0 conversion can automatically
+                // suppress any errors to losslessly handle the conversion.
+                .addFeature(NodeValidationVisitor.Feature.RANGE_TRAIT_ZERO_VALUE_WARNING)
+                .build());
     }
 }

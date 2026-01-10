@@ -123,14 +123,14 @@ public abstract class HttpMessageTestCase implements ToNode, Tagged {
         return getVendorParamsShape().map(vendorParamsShape -> {
             model.expectShape(vendorParamsShape);
             return ShapeValue.builder()
-                .eventShapeId(shape.getId())
-                .shapeId(vendorParamsShape)
-                .value(getVendorParams())
-                .startingContext(context + ".vendorParams")
-                .eventId(eventId)
-                .timestampValidationStrategy(TimestampValidationStrategy.EPOCH_SECONDS)
-                .addFeature(NodeValidationVisitor.Feature.ALLOW_OPTIONAL_NULLS)
-                .build();
+                    .eventShapeId(shape.getId())
+                    .shapeId(vendorParamsShape)
+                    .value(getVendorParams())
+                    .startingContext(context + ".vendorParams")
+                    .eventId(eventId)
+                    .timestampValidationStrategy(TimestampValidationStrategy.EPOCH_SECONDS)
+                    .addFeature(NodeValidationVisitor.Feature.ALLOW_OPTIONAL_NULLS)
+                    .build();
         });
     }
 

@@ -153,6 +153,7 @@ public interface Trait extends FromSourceLocation, ToNode, ToShapeId {
         return Collections.singleton(ShapeValue
                 .builder()
                 .eventId("TraitValue")
+                .shapeId(toShapeId())
                 .value(toNode())
                 .startingContext("Error validating trait `" + getIdiomaticTraitName(this) + "`")
                 .eventShapeId(shape.getId())

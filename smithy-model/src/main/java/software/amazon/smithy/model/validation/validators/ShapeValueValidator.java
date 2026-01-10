@@ -25,14 +25,14 @@ public class ShapeValueValidator extends AbstractValidator {
         for (ShapeId shapeId : model.getShapeIds()) {
             Shape shape = model.expectShape(shapeId);
             for (ShapeValue value : shapeValueIndex.getShapeValues(shapeId)) {
-                validateShapeValue(events, model, shape, value);
+                validateShapeValue(events, model, value);
             }
         }
 
         return events;
     }
 
-    private void validateShapeValue(List<ValidationEvent> events, Model model, Shape shape, ShapeValue shapeValue) {
+    private void validateShapeValue(List<ValidationEvent> events, Model model, ShapeValue shapeValue) {
         NodeValidationVisitor.Builder builder = NodeValidationVisitor.builder()
                 .model(model)
                 .value(shapeValue.toNode())

@@ -33,9 +33,9 @@ public class ShapeValue implements ToNode, ToShapeId {
     public ShapeValue(Builder builder) {
         this.eventId = builder.eventId;
         this.eventShapeId = builder.eventShapeId;
-        this.shapeId = builder.shapeId;
+        this.shapeId = SmithyBuilder.requiredState("shapeId", builder.shapeId);
         this.contextText = builder.contextText;
-        this.value = builder.value;
+        this.value = SmithyBuilder.requiredState("value", builder.value);
         this.timestampValidationStrategy = builder.timestampValidationStrategy;
         this.features = builder.features.isEmpty() ? EnumSet.noneOf(NodeValidationVisitor.Feature.class)
                 : EnumSet.copyOf(builder.features);

@@ -20,7 +20,6 @@ import software.amazon.smithy.model.node.ToNode;
 import software.amazon.smithy.model.shapes.OperationShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
-import software.amazon.smithy.model.shapes.ToShapeId;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.validators.ExamplesTraitValidator;
 import software.amazon.smithy.utils.SmithyBuilder;
@@ -78,21 +77,23 @@ public final class ExamplesTrait extends AbstractTrait implements ToSmithyBuilde
 
         for (Example example : examples) {
             result.add(createShapeValue("input",
-                    operationShape.getInputShape(),
+                    model.expectShape(operationShape.getInputShape()),
                     example.getInput(),
-                    model,
                     shape,
                     example));
             example.getOutput()
                     .ifPresent(output -> result.add(createShapeValue("output",
-                            operationShape.getOutputShape(),
+                            model.expectShape(operationShape.getOutputShape()),
                             output,
-                            model,
                             shape,
                             example)));
             example.getError()
                     .ifPresent(error -> result.add(
-                            createShapeValue("error", error.getShapeId(), error.getContent(), model, shape, example)));
+                            createShapeValue("error",
+                                    model.expectShape(error.getShapeId()),
+                                    error.getContent(),
+                                    shape,
+                                    example)));
         }
 
         return result;
@@ -100,9 +101,8 @@ public final class ExamplesTrait extends AbstractTrait implements ToSmithyBuilde
 
     private ShapeValue createShapeValue(
             String name,
-            ToShapeId shape,
+            Shape shape,
             ObjectNode value,
-            Model model,
             Shape operationShape,
             ExamplesTrait.Example example
     ) {

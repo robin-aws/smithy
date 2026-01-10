@@ -48,6 +48,7 @@ public class ShapeValueIndex implements KnowledgeIndex {
         });
     }
 
+    // TODO: Convert to ShapeVisitor
     private void addShapeValue(ShapeValue shapeValue) {
         shapeValues.computeIfAbsent(shapeValue.toShapeId(), id -> new HashSet<>()).add(shapeValue);
 
@@ -81,14 +82,14 @@ public class ShapeValueIndex implements KnowledgeIndex {
         });
     }
 
-    private void addChildValue(ShapeValue parent, String name, Shape shape, Node value) {
+    private void addChildValue(ShapeValue parent, String name, ToShapeId shapeId, Node value) {
         String childContext = parent.context().isEmpty() ? name : parent.context() + "." + name;
         ShapeValue.Builder builder = ShapeValue.builder()
                 .eventId(parent.eventId())
                 .eventShapeId(parent.eventShapeId())
                 .startingContext(childContext)
                 .timestampValidationStrategy(parent.timestampValidationStrategy())
-                .shapeId(shape)
+                .shapeId(shapeId)
                 .value(value);
         parent.features().forEach(builder::addFeature);
         addShapeValue(builder.build());

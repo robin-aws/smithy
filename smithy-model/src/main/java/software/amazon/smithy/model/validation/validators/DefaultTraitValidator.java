@@ -99,8 +99,8 @@ public final class DefaultTraitValidator extends AbstractValidator {
             return visitor;
         }
 
-        visitor = createOrReuseVisitor(model, visitor, value, shape);
-        events.addAll(shape.accept(visitor));
+        //        visitor = createOrReuseVisitor(model, visitor, value, shape);
+        //        events.addAll(shape.accept(visitor));
 
         switch (shapeTarget.getType()) {
             case BLOB:

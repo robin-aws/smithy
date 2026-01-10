@@ -120,7 +120,9 @@ public abstract class HttpMessageTestCase implements ToNode, Tagged {
     }
 
     public Optional<ShapeValue> getVendorParamsShapeValue(Model model, String eventId, Shape shape, String context) {
-        return getVendorParamsShape().map(vendorParamsShape -> ShapeValue.builder()
+        return getVendorParamsShape().map(vendorParamsShape -> {
+            model.expectShape(vendorParamsShape);
+            return ShapeValue.builder()
                 .eventShapeId(shape.getId())
                 .shapeId(vendorParamsShape)
                 .value(getVendorParams())
@@ -128,7 +130,8 @@ public abstract class HttpMessageTestCase implements ToNode, Tagged {
                 .eventId(eventId)
                 .timestampValidationStrategy(TimestampValidationStrategy.EPOCH_SECONDS)
                 .addFeature(NodeValidationVisitor.Feature.ALLOW_OPTIONAL_NULLS)
-                .build());
+                .build();
+        });
     }
 
     public Map<String, String> getHeaders() {

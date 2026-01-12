@@ -82,7 +82,6 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
         this.recurse = builder.recurse;
         setValue(SmithyBuilder.requiredState("value", builder.value));
         setStartingContext(builder.contextText);
-        setValue(builder.value);
         setEventShapeId(builder.eventShapeId);
         setEventId(builder.eventId);
     }

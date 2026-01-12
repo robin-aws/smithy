@@ -21,14 +21,30 @@ import software.amazon.smithy.utils.SmithyBuilder;
 
 public class ShapeValue implements ToNode, ToShapeId {
 
+    // TODO: Quite an expensive data structure to instantiate and hold onto
+    // for every single Node value in the model.
+    //
+    // * Could set up smarter object sharing for the parts that don't
+    //   change between ShapeValues.
+    // * Could use something like NodePointers or even a JMESPath expr
+    //   to identify sets of node values of the same shape.
+    //   Especially good for long arrays of the same shape,
+    //   which is common in traits for tests.
+    //
+
+    // Event identification (where in the model)
     private final String eventId;
     private final ShapeId eventShapeId;
-    private final ShapeId shapeId;
     private final String contextText;
-    private final Node value;
+
+    // Validation context/configuration
     private final TimestampValidationStrategy timestampValidationStrategy;
     private final EnumSet<NodeValidationVisitor.Feature> features;
     private final Set<Suppression> suppressions;
+
+    // Core data (Shape + Node)
+    private final ShapeId shapeId;
+    private final Node value;
 
     public ShapeValue(Builder builder) {
         this.eventId = builder.eventId;
@@ -77,13 +93,6 @@ public class ShapeValue implements ToNode, ToShapeId {
 
     public Set<Suppression> suppressions() {
         return suppressions;
-    }
-
-    public ValidationEvent constraintsEvent(String message) {
-        Severity severity = hasFeature(NodeValidationVisitor.Feature.ALLOW_CONSTRAINT_ERRORS)
-                ? Severity.WARNING
-                : Severity.ERROR;
-        return event(severity, message);
     }
 
     public ValidationEvent event(Severity severity, String message) {

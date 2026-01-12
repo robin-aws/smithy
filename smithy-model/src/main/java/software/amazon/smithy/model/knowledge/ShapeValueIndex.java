@@ -48,7 +48,7 @@ public class ShapeValueIndex implements KnowledgeIndex {
         });
     }
 
-    // TODO: Convert to ShapeVisitor
+    // TODO: Convert to ShapeVisitor?
     private void addShapeValue(ShapeValue shapeValue) {
         shapeValues.computeIfAbsent(shapeValue.toShapeId(), id -> new HashSet<>()).add(shapeValue);
 

@@ -4,8 +4,6 @@
  */
 package software.amazon.smithy.model.validation.node;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,35 +39,6 @@ public interface NodeValidatorPlugin {
      * @param emitter Consumer to notify of validation event locations and messages.
      */
     void apply(Shape shape, Node value, Context context, Emitter emitter);
-
-    /**
-     * @return Gets the built-in Node validation plugins.
-     */
-    static List<NodeValidatorPlugin> getBuiltins() {
-        List<NodeValidatorPlugin> result = new ArrayList<>(ListUtils.of(
-                new NonNumericFloatValuesPlugin(),
-                new BlobLengthPlugin(),
-                new CollectionLengthPlugin(),
-                new IdRefPlugin(),
-                new MapLengthPlugin(),
-                new PatternTraitPlugin(),
-                new RangeTraitPlugin(),
-                new StringEnumPlugin(),
-                new IntEnumPlugin(),
-                new StringLengthPlugin(),
-                new UniqueItemsPlugin()));
-
-        try {
-            Class<?> constraintsTraitPluginClass = Class.forName("software.amazon.smithy.contracts.ConditionsTraitPlugin");
-            result.add((NodeValidatorPlugin) constraintsTraitPluginClass.getDeclaredConstructor().newInstance());
-        } catch (ClassNotFoundException e) {
-            // ignore
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-
-        return result;
-    }
 
     /**
      * Validation context to pass to each NodeValidatorPlugin.

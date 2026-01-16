@@ -40,6 +40,10 @@ public interface NodeValidatorPlugin {
      */
     void apply(Shape shape, Node value, Context context, Emitter emitter);
 
+    default boolean appliesToShape(Shape shape) {
+        return true;
+    }
+
     /**
      * Validation context to pass to each NodeValidatorPlugin.
      */

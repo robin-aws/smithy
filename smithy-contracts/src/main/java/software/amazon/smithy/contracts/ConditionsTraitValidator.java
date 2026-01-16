@@ -55,56 +55,9 @@ public class ConditionsTraitValidator extends AbstractValidator {
                     NON_SUPPRESSABLE_ERROR));
         }
 
-        // Not using expression.lint() here because we require positive and negative examples instead,
-        // which are checked with the interpreter.
-        // Given linting just selects a single dummy value and evaluates the expression against it,
-        // it would be strictly less powerful when applied here anyway.
-
         List<ValidationEvent> events = new ArrayList<>();
 
-        List<Node> validValueNodes = condition.getExamples().getValid();
-        for (int index = 0; index < validValueNodes.size(); index += 1) {
-            Node validValueNode = validValueNodes.get(index);
-            NodeValidationVisitor visitor = NodeValidationVisitor.builder()
-                    .model(model)
-                    .eventShapeId(shape.getId())
-                    .eventId(getName() + ".valid." + index)
-                    .startingContext(String.format("Valid shape example `%s`",
-                            NodeHandler.print(validValueNode)))
-                    .value(validValueNode)
-                    .build();
-
-            events.addAll(shape.accept(visitor));
-        }
-
-        List<Node> invalidValueNodes = condition.getExamples().getValid();
-        for (int index = 0; index < invalidValueNodes.size(); index += 1) {
-            Node invalidValueNode = invalidValueNodes.get(index);
-            NodeValidationVisitor visitor = NodeValidationVisitor.builder()
-                    .model(model)
-                    .eventShapeId(shape.getId())
-                    .eventId(getName() + ".valid." + index)
-                    .startingContext(String.format("Invalid shape example `%s`",
-                            NodeHandler.print(invalidValueNode)))
-                    .value(invalidValueNode)
-                    .build();
-
-            List<ValidationEvent> validationEvents = shape.accept(visitor);
-            List<ValidationEvent> nonErrorValidationEvents = validationEvents.stream()
-                    .filter(validationEvent -> validationEvent.getSeverity() != Severity.ERROR)
-                    .collect(Collectors.toList());
-
-            events.addAll(nonErrorValidationEvents);
-
-            if (validationEvents.size() == nonErrorValidationEvents.size()) {
-                events.add(error(shape,
-                        invalidValueNode,
-                        String.format("Invalid shape example `%s` passed all validations when it shouldn't have",
-                                NodeHandler.print(invalidValueNode)),
-                        "invalid",
-                        Integer.toString(index)));
-            }
-        }
+        // TODO: lint
 
         return events;
     }

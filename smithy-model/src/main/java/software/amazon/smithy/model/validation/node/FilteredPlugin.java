@@ -4,6 +4,7 @@
  */
 package software.amazon.smithy.model.validation.node;
 
+import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
 
@@ -17,9 +18,14 @@ abstract class FilteredPlugin<S extends Shape, N extends Node> implements NodeVa
     }
 
     @Override
+    public boolean appliesToShape(Model model, Shape shape) {
+        return shapeClass.isInstance(shape);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public final void apply(Shape shape, Node value, Context context, Emitter emitter) {
-        if (shapeClass.isInstance(shape) && nodeClass.isInstance(value)) {
+        if (nodeClass.isInstance(value)) {
             check((S) shape, (N) value, context, emitter);
         }
     }

@@ -4,6 +4,7 @@
  */
 package software.amazon.smithy.model.validation.node;
 
+import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.Node.NonNumericFloat;
 import software.amazon.smithy.model.node.NumberNode;
@@ -22,17 +23,20 @@ public class RangeTraitPlugin implements NodeValidatorPlugin {
     private static final String INVALID_RANGE = "InvalidRange";
 
     @Override
+    public boolean appliesToShape(Model model, Shape shape) {
+        return shape.hasTrait(RangeTrait.ID);
+    }
+
+    @Override
     public final void apply(Shape shape, Node value, Context context, Emitter emitter) {
-        if (shape.hasTrait(RangeTrait.ID)) {
-            if (value.isNumberNode()) {
-                check(shape, context, shape.expectTrait(RangeTrait.class), value.expectNumberNode(), emitter);
-            } else if (value.isStringNode()) {
-                checkNonNumeric(shape,
-                        shape.expectTrait(RangeTrait.class),
-                        value.expectStringNode(),
-                        emitter,
-                        context);
-            }
+        if (value.isNumberNode()) {
+            check(shape, context, shape.expectTrait(RangeTrait.class), value.expectNumberNode(), emitter);
+        } else if (value.isStringNode()) {
+            checkNonNumeric(shape,
+                    shape.expectTrait(RangeTrait.class),
+                    value.expectStringNode(),
+                    emitter,
+                    context);
         }
     }
 

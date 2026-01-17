@@ -24,11 +24,11 @@ public class ConditionsTraitPlugin extends MemberAndShapeTraitPlugin<Shape, Node
     @Override
     protected void check(Shape shape, ConditionsTrait trait, Node value, Context context, Emitter emitter) {
         for (Condition condition : trait.getValues()) {
-            checkContract(shape, condition, value, context, emitter);
+            checkCondition(shape, condition, value, context, emitter);
         }
     }
 
-    private void checkContract(
+    private void checkCondition(
             Shape shape,
             Condition condition,
             Node value,

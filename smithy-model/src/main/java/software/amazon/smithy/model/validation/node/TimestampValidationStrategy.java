@@ -22,6 +22,11 @@ public enum TimestampValidationStrategy implements NodeValidatorPlugin {
      */
     FORMAT {
         @Override
+        public boolean appliesToShape(Model model, Shape shape) {
+            return new TimestampFormatPlugin().appliesToShape(model, shape);
+        }
+
+        @Override
         public void apply(Shape shape, Node value, Context context, Emitter emitter) {
             new TimestampFormatPlugin().apply(shape, value, context, emitter);
         }
@@ -33,8 +38,13 @@ public enum TimestampValidationStrategy implements NodeValidatorPlugin {
      */
     EPOCH_SECONDS {
         @Override
+        public boolean appliesToShape(Model model, Shape shape) {
+            return TimestampValidationStrategy.isTimestampMember(model, shape);
+        }
+
+        @Override
         public void apply(Shape shape, Node value, Context context, Emitter emitter) {
-            if (isTimestampMember(context.model(), shape) && !value.isNumberNode()) {
+            if (!value.isNumberNode()) {
                 emitter.accept(shape,
                         "Invalid " + value.getType() + " value provided for timestamp, `"
                                 + shape.getId() + "`. Expected a number that contains epoch "

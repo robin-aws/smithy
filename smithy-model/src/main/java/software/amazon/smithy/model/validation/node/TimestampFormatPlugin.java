@@ -7,6 +7,7 @@ package software.amazon.smithy.model.validation.node;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.logging.Logger;
+import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.Shape;
@@ -24,6 +25,12 @@ final class TimestampFormatPlugin implements NodeValidatorPlugin {
     private static final DateTimeFormatter HTTP_DATE = DateTimeFormatter.RFC_1123_DATE_TIME;
     private static final DateTimeFormatter DATE_TIME_Z = DateTimeFormatter.ISO_INSTANT;
     private static final Logger LOGGER = Logger.getLogger(TimestampFormatPlugin.class.getName());
+
+    @Override
+    public boolean appliesToShape(Model model, Shape shape) {
+        return shape instanceof TimestampShape
+                || shape instanceof MemberShape && shape.hasTrait(TimestampFormatTrait.ID);
+    }
 
     @Override
     public void apply(Shape shape, Node value, Context context, Emitter emitter) {

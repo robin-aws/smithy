@@ -1,37 +1,32 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import software.amazon.smithy.model.Model;
-import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.NodeType;
 import software.amazon.smithy.model.node.ObjectNode;
-import software.amazon.smithy.model.shapes.ListShape;
 import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.ValidationEvent;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+public class StructureShapeValidator extends ShapeValueValidator<StructureShape> {
 
-public class StructureShapeValidator extends ShapeValueValidator {
-
-    private final StructureShape shape;
-    private final Map<String, ShapeValueValidator> memberValidators = new HashMap<>();
+    private final Map<String, ShapeValueValidator<?>> memberValidators = new HashMap<>();
 
     public StructureShapeValidator(Model model, StructureShape shape, List<NodeValidatorPlugin> plugins) {
-        super(model, plugins);
-        this.shape = shape;
+        super(model, shape, plugins);
         for (Map.Entry<String, MemberShape> entry : shape.getAllMembers().entrySet()) {
-            memberValidators.put(entry.getKey(), ShapeValueValidatorIndex.of(model).getShapeValidator(entry.getValue()));
+            memberValidators.put(entry.getKey(),
+                    ShapeValueValidatorIndex.of(model).getShapeValidator(entry.getValue()));
         }
-    }
-
-    @Override
-    public StructureShape shape() {
-        return shape;
     }
 
     @Override
@@ -40,7 +35,7 @@ public class StructureShapeValidator extends ShapeValueValidator {
             return invalidShape(node, NodeType.OBJECT, context);
         }
 
-        List<ValidationEvent> events = super.validate(node, context);
+        List<ValidationEvent> events = applyPlugins(node, context);
 
         Map<String, MemberShape> members = shape.getAllMembers();
 
@@ -48,21 +43,20 @@ public class StructureShapeValidator extends ShapeValueValidator {
         for (Map.Entry<String, Node> entry : object.getStringMap().entrySet()) {
             String entryKey = entry.getKey();
             Node entryValue = entry.getValue();
-            ShapeValueValidator memberValidator = memberValidators.get(entryKey);
+            ShapeValueValidator<?> memberValidator = memberValidators.get(entryKey);
             if (memberValidator == null) {
                 events.add(unknownMember(context, node.getSourceLocation(), entryKey, shape, Severity.WARNING));
             } else {
-                context.pushPrefix(entryKey);
-                events.addAll(memberValidator.validate(entryValue, context));
-                context.popPrefix();
+                events.addAll(traverse(memberValidator, entryKey, entryValue, context));
             }
         }
 
         for (MemberShape member : members.values()) {
             if (member.isRequired() && !object.getMember(member.getMemberName()).isPresent()) {
-                Severity severity = context.getPluginContext().hasFeature(NodeValidationVisitor.Feature.ALLOW_CONSTRAINT_ERRORS)
-                        ? Severity.WARNING
-                        : Severity.ERROR;
+                Severity severity =
+                        context.getPluginContext().hasFeature(NodeValidationVisitor.Feature.ALLOW_CONSTRAINT_ERRORS)
+                                ? Severity.WARNING
+                                : Severity.ERROR;
                 events.add(context.event(String.format(
                         "Missing required structure member `%s` for `%s`",
                         member.getMemberName(),

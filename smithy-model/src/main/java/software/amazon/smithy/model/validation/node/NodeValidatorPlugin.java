@@ -6,7 +6,6 @@ package software.amazon.smithy.model.validation.node;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -18,7 +17,6 @@ import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
-import software.amazon.smithy.utils.ListUtils;
 import software.amazon.smithy.utils.SmithyInternalApi;
 
 /**
@@ -30,6 +28,8 @@ import software.amazon.smithy.utils.SmithyInternalApi;
 public interface NodeValidatorPlugin {
     String[] EMPTY_STRING_ARRAY = new String[0];
 
+    boolean appliesToShape(Model model, Shape shape);
+
     /**
      * Applies the plugin to the given shape, node value, and model.
      *
@@ -39,10 +39,6 @@ public interface NodeValidatorPlugin {
      * @param emitter Consumer to notify of validation event locations and messages.
      */
     void apply(Shape shape, Node value, Context context, Emitter emitter);
-
-    default boolean appliesToShape(Shape shape) {
-        return true;
-    }
 
     /**
      * Validation context to pass to each NodeValidatorPlugin.

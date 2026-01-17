@@ -12,10 +12,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
+import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceException;
 import software.amazon.smithy.model.knowledge.OperationIndex;
 import software.amazon.smithy.model.traits.MixinTrait;
 import software.amazon.smithy.model.traits.UnitTypeTrait;
+import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
 import software.amazon.smithy.utils.BuilderRef;
 import software.amazon.smithy.utils.ListUtils;
 import software.amazon.smithy.utils.ToSmithyBuilder;
@@ -203,6 +207,11 @@ public final class OperationShape extends Shape implements ToSmithyBuilder<Opera
                     && output.equals(otherShape.output)
                     && errors.equals(otherShape.errors);
         }
+    }
+
+    @Override
+    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
+        throw new IllegalStateException("Encountered invalid shape type: " + getType());
     }
 
     /**

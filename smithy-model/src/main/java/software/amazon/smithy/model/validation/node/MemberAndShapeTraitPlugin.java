@@ -23,11 +23,15 @@ public abstract class MemberAndShapeTraitPlugin<S extends Shape, N extends Node,
     }
 
     @Override
+    public boolean appliesToShape(Model model, Shape shape) {
+        return shape.getTrait(traitClass).isPresent()
+                && isMatchingShape(shape, model);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public final void apply(Shape shape, Node value, Context context, Emitter emitter) {
-        if (nodeClass.isInstance(value)
-                && shape.getTrait(traitClass).isPresent()
-                && isMatchingShape(shape, context.model())) {
+        if (nodeClass.isInstance(value)) {
             check(shape, shape.getTrait(traitClass).get(), (N) value, context, emitter);
         }
     }

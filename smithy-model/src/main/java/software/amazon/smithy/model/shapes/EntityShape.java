@@ -7,7 +7,12 @@ package software.amazon.smithy.model.shapes;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
 import software.amazon.smithy.utils.BuilderRef;
 
 /**
@@ -118,6 +123,11 @@ public abstract class EntityShape extends Shape {
 
         EntityShape o = (EntityShape) other;
         return getResources().equals(o.getResources()) && getAllOperations().equals(o.getAllOperations());
+    }
+
+    @Override
+    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
+        throw new IllegalStateException("Encountered invalid shape type: " + getType());
     }
 
     /**

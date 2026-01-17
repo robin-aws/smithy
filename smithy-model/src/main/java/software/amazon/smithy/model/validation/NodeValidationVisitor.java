@@ -66,7 +66,8 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
     private static final List<NodeValidatorPlugin> BUILTIN;
     static {
         BUILTIN = new ArrayList<>();
-        for (NodeValidatorPlugin plugin: ServiceLoader.load(NodeValidatorPlugin.class, NodeValidatorPlugin.class.getClassLoader())) {
+        for (NodeValidatorPlugin plugin : ServiceLoader.load(NodeValidatorPlugin.class,
+                NodeValidatorPlugin.class.getClassLoader())) {
             BUILTIN.add(plugin);
         }
     }

@@ -5,6 +5,7 @@
 package software.amazon.smithy.model.validation.node;
 
 import java.util.Set;
+import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.Node.NonNumericFloat;
 import software.amazon.smithy.model.shapes.Shape;
@@ -16,8 +17,13 @@ public final class NonNumericFloatValuesPlugin implements NodeValidatorPlugin {
     private static final Set<String> NON_NUMERIC_FLOAT_VALUES = NonNumericFloat.stringRepresentations();
 
     @Override
+    public boolean appliesToShape(Model model, Shape shape) {
+        return shape.isFloatShape() || shape.isDoubleShape();
+    }
+
+    @Override
     public void apply(Shape shape, Node value, Context context, Emitter emitter) {
-        if (!(shape.isFloatShape() || shape.isDoubleShape()) || !value.isStringNode()) {
+        if (!value.isStringNode()) {
             return;
         }
         String nodeValue = value.expectStringNode().getValue();

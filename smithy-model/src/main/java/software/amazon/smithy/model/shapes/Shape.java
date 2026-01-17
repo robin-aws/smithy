@@ -22,7 +22,6 @@ import software.amazon.smithy.model.node.ExpectationNotMetException;
 import software.amazon.smithy.model.traits.MixinTrait;
 import software.amazon.smithy.model.traits.TagsTrait;
 import software.amazon.smithy.model.traits.Trait;
-import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
 import software.amazon.smithy.utils.ListUtils;
 import software.amazon.smithy.utils.MapUtils;
 import software.amazon.smithy.utils.SmithyBuilder;
@@ -47,7 +46,6 @@ public abstract class Shape implements FromSourceLocation, Tagged, ToShapeId, Co
     private final Map<ShapeId, Shape> mixins;
     private final transient SourceLocation source;
     private transient List<String> memberNames;
-    private transient List<NodeValidatorPlugin> nodeValidatorPlugins;
     private int hash;
 
     /**

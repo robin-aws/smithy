@@ -38,9 +38,8 @@ public class ConditionsTraitValidator extends AbstractValidator {
     }
 
     private List<ValidationEvent> validateCondition(Model model, Shape shape, Trait trait, Condition condition) {
-        JmespathExpression parsed;
         try {
-            parsed = JmespathExpression.parse(condition.getExpression());
+            JmespathExpression.parse(condition.getExpression());
         } catch (JmespathException e) {
             return Collections.singletonList(error(
                     shape,

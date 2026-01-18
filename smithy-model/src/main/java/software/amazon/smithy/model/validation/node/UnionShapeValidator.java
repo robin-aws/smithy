@@ -40,8 +40,6 @@ public class UnionShapeValidator extends ShapeValueValidator<UnionShape> {
 
         List<ValidationEvent> events = applyPlugins(node, context);
 
-        Map<String, MemberShape> members = shape.getAllMembers();
-
         ObjectNode object = node.expectObjectNode();
         if (object.size() > 1) {
             events.add(context.event("union values can contain a value for only a single member",

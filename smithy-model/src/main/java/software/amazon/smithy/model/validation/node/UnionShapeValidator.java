@@ -4,25 +4,27 @@
  */
 package software.amazon.smithy.model.validation.node;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.NodeType;
 import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.StructureShape;
+import software.amazon.smithy.model.shapes.UnionShape;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.ValidationEvent;
 
-public class StructureShapeValidator extends ShapeValueValidator<StructureShape> {
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class UnionShapeValidator extends ShapeValueValidator<UnionShape> {
 
     private final Map<String, ShapeValueValidator<?>> memberValidators = new HashMap<>();
 
-    public StructureShapeValidator(Model model, StructureShape shape, List<NodeValidatorPlugin> plugins) {
+    public UnionShapeValidator(Model model, UnionShape shape, List<NodeValidatorPlugin> plugins) {
         super(model, shape, plugins);
         for (Map.Entry<String, MemberShape> entry : shape.getAllMembers().entrySet()) {
             memberValidators.put(entry.getKey(),
@@ -41,29 +43,21 @@ public class StructureShapeValidator extends ShapeValueValidator<StructureShape>
         Map<String, MemberShape> members = shape.getAllMembers();
 
         ObjectNode object = node.expectObjectNode();
-        for (Map.Entry<String, Node> entry : object.getStringMap().entrySet()) {
-            String entryKey = entry.getKey();
-            Node entryValue = entry.getValue();
-            ShapeValueValidator<?> memberValidator = memberValidators.get(entryKey);
-            if (memberValidator == null) {
-                events.add(unknownMember(context, node.getSourceLocation(), entryKey, shape, Severity.WARNING));
-            } else {
-                events.addAll(traverse(memberValidator, entryKey, entryValue, context));
+        if (object.size() > 1) {
+            events.add(context.event("union values can contain a value for only a single member", node.getSourceLocation()));
+        } else {
+            for (Map.Entry<String, Node> entry : object.getStringMap().entrySet()) {
+                String entryKey = entry.getKey();
+                Node entryValue = entry.getValue();
+                ShapeValueValidator<?> memberValidator = memberValidators.get(entryKey);
+                if (memberValidator == null) {
+                    events.add(unknownMember(context, node.getSourceLocation(), entryKey, shape, Severity.WARNING));
+                } else {
+                    events.addAll(traverse(memberValidator, entryKey, entryValue, context));
+                }
             }
         }
 
-        for (MemberShape member : members.values()) {
-            if (member.isRequired() && !object.getMember(member.getMemberName()).isPresent()) {
-                Severity severity =
-                        context.getPluginContext().hasFeature(NodeValidationVisitor.Feature.ALLOW_CONSTRAINT_ERRORS)
-                                ? Severity.WARNING
-                                : Severity.ERROR;
-                events.add(context.event(String.format(
-                        "Missing required structure member `%s` for `%s`",
-                        member.getMemberName(),
-                        shape.getId()), severity, node.getSourceLocation()));
-            }
-        }
         return events;
     }
 }

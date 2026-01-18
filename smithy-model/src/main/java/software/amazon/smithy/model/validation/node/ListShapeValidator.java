@@ -4,6 +4,7 @@
  */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.EnumSet;
 import java.util.List;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.ArrayNode;
@@ -24,7 +25,7 @@ public class ListShapeValidator extends ShapeValueValidator<ListShape> {
     @Override
     public List<ValidationEvent> validate(Node node, Context context) {
         if (!node.isArrayNode()) {
-            return invalidShape(node, NodeType.ARRAY, context);
+            return invalidShape(node, EnumSet.of(NodeType.ARRAY), context);
         }
 
         List<ValidationEvent> events = applyPlugins(node, context);

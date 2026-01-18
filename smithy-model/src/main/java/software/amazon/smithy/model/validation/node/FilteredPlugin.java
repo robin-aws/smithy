@@ -24,7 +24,7 @@ abstract class FilteredPlugin<S extends Shape, N extends Node> implements NodeVa
 
     @Override
     @SuppressWarnings("unchecked")
-    public final void apply(Shape shape, Node value, Context context, Emitter emitter) {
+    public final void applyToShape(Shape shape, Node value, Context context, Emitter emitter) {
         if (nodeClass.isInstance(value)) {
             check((S) shape, (N) value, context, emitter);
         }

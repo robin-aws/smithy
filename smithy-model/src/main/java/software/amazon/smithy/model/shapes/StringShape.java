@@ -4,7 +4,15 @@
  */
 package software.amazon.smithy.model.shapes;
 
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
+
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.node.NodeType;
+import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
+import software.amazon.smithy.model.validation.node.SimpleShapeValueValidator;
 import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
@@ -38,6 +46,11 @@ public class StringShape extends SimpleShape implements ToSmithyBuilder<StringSh
     @Override
     public ShapeType getType() {
         return ShapeType.STRING;
+    }
+
+    @Override
+    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
+        return new SimpleShapeValueValidator(model, this, EnumSet.of(NodeType.STRING), plugins);
     }
 
     /**

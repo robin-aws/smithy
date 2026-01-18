@@ -28,7 +28,7 @@ public class RangeTraitPlugin implements NodeValidatorPlugin {
     }
 
     @Override
-    public final void apply(Shape shape, Node value, Context context, Emitter emitter) {
+    public final void applyToShape(Shape shape, Node value, Context context, Emitter emitter) {
         if (value.isNumberNode()) {
             check(shape, context, shape.expectTrait(RangeTrait.class), value.expectNumberNode(), emitter);
         } else if (value.isStringNode()) {

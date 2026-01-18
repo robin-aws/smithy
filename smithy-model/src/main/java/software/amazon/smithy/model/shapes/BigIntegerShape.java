@@ -4,7 +4,13 @@
  */
 package software.amazon.smithy.model.shapes;
 
+import java.util.List;
 import java.util.Optional;
+
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.validation.node.NaturalNumberShapeValueValidator;
+import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
 import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
@@ -38,6 +44,11 @@ public final class BigIntegerShape extends NumberShape implements ToSmithyBuilde
     @Override
     public ShapeType getType() {
         return ShapeType.BIG_INTEGER;
+    }
+
+    @Override
+    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
+        return new NaturalNumberShapeValueValidator(model, this, null, null, plugins);
     }
 
     /**

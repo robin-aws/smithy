@@ -27,7 +27,7 @@ public enum TimestampValidationStrategy implements NodeValidatorPlugin {
         }
 
         @Override
-        public void apply(Shape shape, Node value, Context context, Emitter emitter) {
+        public void applyToShape(Shape shape, Node value, Context context, Emitter emitter) {
             new TimestampFormatPlugin().apply(shape, value, context, emitter);
         }
     },
@@ -43,7 +43,7 @@ public enum TimestampValidationStrategy implements NodeValidatorPlugin {
         }
 
         @Override
-        public void apply(Shape shape, Node value, Context context, Emitter emitter) {
+        public void applyToShape(Shape shape, Node value, Context context, Emitter emitter) {
             if (!value.isNumberNode()) {
                 emitter.accept(shape,
                         "Invalid " + value.getType() + " value provided for timestamp, `"

@@ -4,11 +4,15 @@
  */
 package software.amazon.smithy.model.shapes;
 
+import java.util.List;
 import java.util.Optional;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.traits.DefaultTrait;
 import software.amazon.smithy.model.traits.RequiredTrait;
 import software.amazon.smithy.model.traits.Trait;
+import software.amazon.smithy.model.validation.node.MemberShapeValueValidator;
+import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
 import software.amazon.smithy.utils.OptionalUtils;
 import software.amazon.smithy.utils.SmithyBuilder;
 import software.amazon.smithy.utils.ToSmithyBuilder;
@@ -125,6 +129,11 @@ public final class MemberShape extends Shape implements ToSmithyBuilder<MemberSh
         return OptionalUtils.or(
                 findTrait(traitName),
                 () -> model.getShape(getTarget()).flatMap(targetedShape -> targetedShape.findTrait(traitName)));
+    }
+
+    @Override
+    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
+        return new MemberShapeValueValidator(model, this, plugins);
     }
 
     /**

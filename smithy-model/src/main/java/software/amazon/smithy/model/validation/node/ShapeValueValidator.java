@@ -4,24 +4,23 @@
  */
 package software.amazon.smithy.model.validation.node;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceLocation;
 import software.amazon.smithy.model.knowledge.NullableIndex;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.NodeType;
-import software.amazon.smithy.model.shapes.ByteShape;
-import software.amazon.smithy.model.shapes.ListShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
-import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.ValidationEvent;
 import software.amazon.smithy.utils.ListUtils;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class ShapeValueValidator<T extends Shape> {
 
@@ -48,7 +47,7 @@ public abstract class ShapeValueValidator<T extends Shape> {
                         .add(context.event(message, severity, location.getSourceLocation(), additionalEventIdParts)));
 
         for (NodeValidatorPlugin plugin : plugins) {
-            plugin.apply(shape,
+            plugin.applyToShape(shape,
                     value,
                     context.pluginContext,
                     (location, severity, message, additionalEventIdParts) -> events
@@ -66,7 +65,7 @@ public abstract class ShapeValueValidator<T extends Shape> {
         return result;
     }
 
-    protected List<ValidationEvent> invalidShape(Node value, NodeType expectedType, Context context) {
+    protected List<ValidationEvent> invalidShape(Node value, EnumSet<NodeType> expectedTypes, Context context) {
         // Nullable shapes allow null values.
         if (value.isNullNode()
                 && context.pluginContext.hasFeature(NodeValidationVisitor.Feature.ALLOW_OPTIONAL_NULLS)) {
@@ -78,7 +77,7 @@ public abstract class ShapeValueValidator<T extends Shape> {
 
         String message = String.format(
                 "Expected %s value for %s shape, `%s`; found %s value",
-                expectedType,
+                expectedTypes.stream().map(NodeType::toString).collect(Collectors.joining(" or ")),
                 shape.getType(),
                 shape.getId(),
                 value.getType());
@@ -135,7 +134,7 @@ public abstract class ShapeValueValidator<T extends Shape> {
                         return applyPlugins(value, context);
                     }
                 })
-                .orElseGet(() -> invalidShape(value, NodeType.NUMBER, context));
+                .orElseGet(() -> invalidShape(value, EnumSet.of(NodeType.NUMBER), context));
     }
 
     public static class Context {

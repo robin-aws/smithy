@@ -4,6 +4,7 @@
  */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import software.amazon.smithy.model.Model;
@@ -29,12 +30,12 @@ public class MapShapeValidator extends ShapeValueValidator<MapShape> {
     @Override
     public List<ValidationEvent> validate(Node node, Context context) {
         if (!node.isObjectNode()) {
-            return invalidShape(node, NodeType.OBJECT, context);
+            return invalidShape(node, EnumSet.of(NodeType.OBJECT), context);
         }
-        ObjectNode object = node.asObjectNode().get();
 
         List<ValidationEvent> events = applyPlugins(node, context);
 
+        ObjectNode object = node.asObjectNode().get();
         for (Map.Entry<StringNode, Node> entry : object.getMembers().entrySet()) {
             String key = entry.getKey().getValue();
             events.addAll(traverse(keyValidator, key + " (map-key)", entry.getKey(), context));

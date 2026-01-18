@@ -22,7 +22,7 @@ public final class NonNumericFloatValuesPlugin implements NodeValidatorPlugin {
     }
 
     @Override
-    public void apply(Shape shape, Node value, Context context, Emitter emitter) {
+    public void applyToShape(Shape shape, Node value, Context context, Emitter emitter) {
         if (!value.isStringNode()) {
             return;
         }

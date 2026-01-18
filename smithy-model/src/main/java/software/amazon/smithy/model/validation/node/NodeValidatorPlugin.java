@@ -28,8 +28,6 @@ import software.amazon.smithy.utils.SmithyInternalApi;
 public interface NodeValidatorPlugin {
     String[] EMPTY_STRING_ARRAY = new String[0];
 
-    boolean appliesToShape(Model model, Shape shape);
-
     /**
      * Applies the plugin to the given shape, node value, and model.
      *
@@ -38,7 +36,15 @@ public interface NodeValidatorPlugin {
      * @param context Evaluation context.
      * @param emitter Consumer to notify of validation event locations and messages.
      */
-    void apply(Shape shape, Node value, Context context, Emitter emitter);
+    default void apply(Shape shape, Node value, Context context, Emitter emitter) {
+        if (appliesToShape(context.model(), shape)) {
+            applyToShape(shape, value, context, emitter);
+        }
+    }
+
+    boolean appliesToShape(Model model, Shape shape);
+
+    void applyToShape(Shape shape, Node value, Context context, Emitter emitter);
 
     /**
      * Validation context to pass to each NodeValidatorPlugin.

@@ -6,7 +6,6 @@ package software.amazon.smithy.model.shapes;
 
 import java.util.List;
 import java.util.Optional;
-
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.validation.node.BlobShapeValueValidator;
 import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;

@@ -4,6 +4,14 @@
  */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceLocation;
 import software.amazon.smithy.model.knowledge.NullableIndex;
@@ -16,15 +24,6 @@ import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.ValidationEvent;
 import software.amazon.smithy.utils.ListUtils;
 import software.amazon.smithy.utils.SmithyBuilder;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 // TODO: Rename to NodeValidator?
 public abstract class ShapeValueValidator<T extends Shape> {
@@ -64,7 +63,8 @@ public abstract class ShapeValueValidator<T extends Shape> {
         return events;
     }
 
-    protected List<ValidationEvent> traverse(ShapeValueValidator<?> validator, String name, Node value, Context context) {
+    protected List<
+            ValidationEvent> traverse(ShapeValueValidator<?> validator, String name, Node value, Context context) {
         context.pushPrefix(name);
         List<ValidationEvent> result = validator.validate(value, context);
         context.popPrefix();

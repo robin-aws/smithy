@@ -6,7 +6,6 @@ package software.amazon.smithy.model.shapes;
 
 import java.util.List;
 import java.util.Optional;
-
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.validation.node.NaturalNumberShapeValueValidator;
 import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
@@ -48,7 +47,11 @@ public class IntegerShape extends NumberShape implements ToSmithyBuilder<Integer
 
     @Override
     public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
-        return new NaturalNumberShapeValueValidator(model, this, Long.valueOf(Integer.MIN_VALUE), Long.valueOf(Integer.MAX_VALUE), plugins);
+        return new NaturalNumberShapeValueValidator(model,
+                this,
+                Long.valueOf(Integer.MIN_VALUE),
+                Long.valueOf(Integer.MAX_VALUE),
+                plugins);
     }
 
     /**

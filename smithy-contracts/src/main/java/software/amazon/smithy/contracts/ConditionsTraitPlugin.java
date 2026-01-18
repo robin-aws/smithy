@@ -4,8 +4,6 @@
  */
 package software.amazon.smithy.contracts;
 
-import software.amazon.smithy.contracts.Condition;
-import software.amazon.smithy.contracts.ConditionsTrait;
 import software.amazon.smithy.jmespath.JmespathExpression;
 import software.amazon.smithy.jmespath.evaluation.Evaluator;
 import software.amazon.smithy.model.jmespath.node.NodeJmespathRuntime;

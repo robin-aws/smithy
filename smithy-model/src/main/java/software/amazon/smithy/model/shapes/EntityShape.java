@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.validation.node.InvalidSchemaShapeValueValidator;
 import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;

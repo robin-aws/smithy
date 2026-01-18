@@ -1,5 +1,11 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.EnumSet;
+import java.util.List;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.NodeType;
@@ -7,15 +13,18 @@ import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.validation.ValidationEvent;
 import software.amazon.smithy.utils.ListUtils;
 
-import java.util.EnumSet;
-import java.util.List;
-
 public class NaturalNumberShapeValueValidator extends ShapeValueValidator<Shape> {
 
     private final Long min;
     private final Long max;
 
-    public NaturalNumberShapeValueValidator(Model model, Shape shape, Long min, Long max, List<NodeValidatorPlugin> plugins) {
+    public NaturalNumberShapeValueValidator(
+            Model model,
+            Shape shape,
+            Long min,
+            Long max,
+            List<NodeValidatorPlugin> plugins
+    ) {
         super(model, shape, plugins);
         this.min = min;
         this.max = max;

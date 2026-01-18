@@ -11,13 +11,9 @@ import java.util.stream.Collectors;
 import software.amazon.smithy.jmespath.JmespathException;
 import software.amazon.smithy.jmespath.JmespathExpression;
 import software.amazon.smithy.model.Model;
-import software.amazon.smithy.model.node.Node;
-import software.amazon.smithy.model.node.internal.NodeHandler;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.traits.Trait;
 import software.amazon.smithy.model.validation.AbstractValidator;
-import software.amazon.smithy.model.validation.NodeValidationVisitor;
-import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.ValidationEvent;
 
 public class ConditionsTraitValidator extends AbstractValidator {

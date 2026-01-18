@@ -4,21 +4,18 @@
  */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.NodeType;
 import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.shapes.MemberShape;
-import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.shapes.UnionShape;
-import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.ValidationEvent;
-
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class UnionShapeValidator extends ShapeValueValidator<UnionShape> {
 
@@ -47,7 +44,8 @@ public class UnionShapeValidator extends ShapeValueValidator<UnionShape> {
 
         ObjectNode object = node.expectObjectNode();
         if (object.size() > 1) {
-            events.add(context.event("union values can contain a value for only a single member", node.getSourceLocation()));
+            events.add(context.event("union values can contain a value for only a single member",
+                    node.getSourceLocation()));
         } else {
             for (Map.Entry<String, Node> entry : object.getStringMap().entrySet()) {
                 String entryKey = entry.getKey();

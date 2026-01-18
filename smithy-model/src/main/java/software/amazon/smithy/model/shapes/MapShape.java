@@ -13,7 +13,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceException;
 import software.amazon.smithy.model.SourceLocation;
@@ -21,7 +20,6 @@ import software.amazon.smithy.model.traits.Trait;
 import software.amazon.smithy.model.validation.node.MapShapeValidator;
 import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
 import software.amazon.smithy.model.validation.node.ShapeValueValidator;
-import software.amazon.smithy.model.validation.node.StructureShapeValidator;
 import software.amazon.smithy.utils.ListUtils;
 import software.amazon.smithy.utils.Pair;
 import software.amazon.smithy.utils.SetUtils;

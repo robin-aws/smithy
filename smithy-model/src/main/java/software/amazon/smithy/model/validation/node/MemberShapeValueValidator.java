@@ -1,13 +1,16 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.List;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.knowledge.NullableIndex;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.validation.ValidationEvent;
 import software.amazon.smithy.utils.ListUtils;
-
-import java.util.List;
 
 public class MemberShapeValueValidator extends ShapeValueValidator<MemberShape> {
 
@@ -51,17 +54,20 @@ public class MemberShapeValueValidator extends ShapeValueValidator<MemberShape> 
                     return ListUtils.of(context.event(
                             String.format(
                                     "Non-sparse list shape `%s` cannot contain null values",
-                                    shape.getContainer()), value.getSourceLocation()));
+                                    shape.getContainer()),
+                            value.getSourceLocation()));
                 case MAP:
                     return ListUtils.of(context.event(
                             String.format(
                                     "Non-sparse map shape `%s` cannot contain null values",
-                                    shape.getContainer()), value.getSourceLocation()));
+                                    shape.getContainer()),
+                            value.getSourceLocation()));
                 case STRUCTURE:
                     return ListUtils.of(context.event(
                             String.format("Required structure member `%s` for `%s` cannot be null",
                                     shape.getMemberName(),
-                                    shape.getContainer()), value.getSourceLocation()));
+                                    shape.getContainer()),
+                            value.getSourceLocation()));
                 default:
                     break;
             }

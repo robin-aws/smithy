@@ -17,12 +17,15 @@ import software.amazon.smithy.model.validation.ValidationEvent;
 
 public class MapShapeValidator extends ShapeValueValidator<MapShape> {
 
-    private final ShapeValueValidator<?> keyValidator;
-    private final ShapeValueValidator<?> valueValidator;
+    private ShapeValueValidator<?> keyValidator;
+    private ShapeValueValidator<?> valueValidator;
 
     public MapShapeValidator(Model model, MapShape shape, List<NodeValidatorPlugin> plugins) {
         super(model, shape, plugins);
-        ShapeValueValidatorIndex index = ShapeValueValidatorIndex.of(model);
+    }
+
+    @Override
+    void resolve(ShapeValueValidatorIndex index) {
         keyValidator = index.getShapeValidator(shape.getKey());
         valueValidator = index.getShapeValidator(shape.getValue());
     }

@@ -26,9 +26,12 @@ public class UnionShapeValidator extends ShapeValueValidator<UnionShape> {
 
     public UnionShapeValidator(Model model, UnionShape shape, List<NodeValidatorPlugin> plugins) {
         super(model, shape, plugins);
+    }
+
+    @Override
+    void resolve(ShapeValueValidatorIndex index) {
         for (Map.Entry<String, MemberShape> entry : shape.getAllMembers().entrySet()) {
-            memberValidators.put(entry.getKey(),
-                    ShapeValueValidatorIndex.of(model).getShapeValidator(entry.getValue()));
+            memberValidators.put(entry.getKey(), index.getShapeValidator(entry.getValue()));
         }
     }
 

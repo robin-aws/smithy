@@ -24,9 +24,12 @@ public class StructureShapeValidator extends ShapeValueValidator<StructureShape>
 
     public StructureShapeValidator(Model model, StructureShape shape, List<NodeValidatorPlugin> plugins) {
         super(model, shape, plugins);
+    }
+
+    @Override
+    void resolve(ShapeValueValidatorIndex index) {
         for (Map.Entry<String, MemberShape> entry : shape.getAllMembers().entrySet()) {
-            memberValidators.put(entry.getKey(),
-                    ShapeValueValidatorIndex.of(model).getShapeValidator(entry.getValue()));
+            memberValidators.put(entry.getKey(), index.getShapeValidator(entry.getValue()));
         }
     }
 

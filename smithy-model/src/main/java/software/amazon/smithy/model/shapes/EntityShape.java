@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.validation.node.InvalidSchemaShapeValueValidator;
 import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
 import software.amazon.smithy.model.validation.node.ShapeValueValidator;
 import software.amazon.smithy.utils.BuilderRef;
@@ -127,7 +128,7 @@ public abstract class EntityShape extends Shape {
 
     @Override
     public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
-        throw new IllegalStateException("Encountered invalid shape type: " + getType());
+        return new InvalidSchemaShapeValueValidator(model, this, plugins);
     }
 
     /**

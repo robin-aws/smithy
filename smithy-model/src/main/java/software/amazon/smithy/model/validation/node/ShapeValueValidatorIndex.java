@@ -11,7 +11,11 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.knowledge.KnowledgeIndex;
+import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
+import software.amazon.smithy.model.shapes.ShapeId;
+import software.amazon.smithy.model.shapes.ToShapeId;
+import software.amazon.smithy.model.validation.ValidationEvent;
 
 public class ShapeValueValidatorIndex implements KnowledgeIndex {
 
@@ -29,13 +33,26 @@ public class ShapeValueValidatorIndex implements KnowledgeIndex {
     }
 
     private final Model model;
-    private final Map<Shape, ShapeValueValidator> validators = new HashMap<>();
+    private final Map<ShapeId, ShapeValueValidator<?>> validators = new HashMap<>();
 
     public ShapeValueValidatorIndex(Model model) {
         this.model = model;
+
+        for (ShapeId shapeId : model.getShapeIds()) {
+            Shape shape = model.expectShape(shapeId);
+            validators.put(shapeId, shape.createValueValidator(model, BUILTIN));
+        }
+
+        for (ShapeValueValidator<?> validator : validators.values()) {
+            validator.resolve(this);
+        }
     }
 
-    public ShapeValueValidator<?> getShapeValidator(Shape shape) {
-        return validators.computeIfAbsent(shape, s -> s.createValueValidator(model, BUILTIN));
+    public ShapeValueValidator<?> getShapeValidator(ToShapeId shapeId) {
+        return validators.get(shapeId.toShapeId());
+    }
+
+    public List<ValidationEvent> validate(ToShapeId shapeId, Node node, ShapeValueValidator.Context context) {
+        return getShapeValidator(shapeId).validate(node, context);
     }
 }

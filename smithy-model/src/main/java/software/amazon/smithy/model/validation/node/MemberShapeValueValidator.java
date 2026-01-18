@@ -12,16 +12,20 @@ import java.util.List;
 public class MemberShapeValueValidator extends ShapeValueValidator<MemberShape> {
 
     private final Model model;
-    private final ShapeValueValidator<?> targetValidator;
+    private ShapeValueValidator<?> targetValidator;
     private final boolean isNullable;
 
     public MemberShapeValueValidator(Model model, MemberShape shape, List<NodeValidatorPlugin> plugins) {
         super(model, shape, plugins);
         this.model = model;
-        this.targetValidator = model.getShape(shape.getTarget())
-                                    .map(s -> ShapeValueValidatorIndex.of(model).getShapeValidator(s))
-                                    .orElse(null);
         this.isNullable = NullableIndex.of(model).isMemberNullable(shape);
+    }
+
+    @Override
+    void resolve(ShapeValueValidatorIndex index) {
+        this.targetValidator = model.getShape(shape.getTarget())
+                .map(index::getShapeValidator)
+                .orElse(null);
     }
 
     @Override

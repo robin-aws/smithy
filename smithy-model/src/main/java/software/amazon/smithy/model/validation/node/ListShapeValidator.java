@@ -15,11 +15,15 @@ import software.amazon.smithy.model.validation.ValidationEvent;
 
 public class ListShapeValidator extends ShapeValueValidator<ListShape> {
 
-    private final ShapeValueValidator<?> memberValidator;
+    private ShapeValueValidator<?> memberValidator;
 
     public ListShapeValidator(Model model, ListShape shape, List<NodeValidatorPlugin> plugins) {
         super(model, shape, plugins);
-        this.memberValidator = ShapeValueValidatorIndex.of(model).getShapeValidator(shape.getMember());
+    }
+
+    @Override
+    void resolve(ShapeValueValidatorIndex index) {
+        this.memberValidator = index.getShapeValidator(shape.getMember());
     }
 
     @Override

@@ -9,14 +9,17 @@ import software.amazon.smithy.jmespath.evaluation.Evaluator;
 import software.amazon.smithy.model.jmespath.node.NodeJmespathRuntime;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
+import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.node.MemberAndShapeTraitPlugin;
 
-public class ConditionsTraitPlugin extends MemberAndShapeTraitPlugin<Shape, Node, ConditionsTrait> {
+import java.util.EnumSet;
+
+public class ConditionsTraitPlugin extends MemberAndShapeTraitPlugin<Node, ConditionsTrait> {
 
     public ConditionsTraitPlugin() {
-        super(Shape.class, Node.class, ConditionsTrait.class);
+        super(EnumSet.allOf(ShapeType.class), Node.class, ConditionsTrait.class);
     }
 
     @Override

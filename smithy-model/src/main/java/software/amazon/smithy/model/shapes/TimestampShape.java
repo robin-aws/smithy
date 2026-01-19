@@ -4,15 +4,9 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Optional;
-import software.amazon.smithy.model.Model;
-import software.amazon.smithy.model.node.NodeType;
-import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
-import software.amazon.smithy.model.validation.node.ShapeValueValidator;
-import software.amazon.smithy.model.validation.node.SimpleShapeValueValidator;
 import software.amazon.smithy.utils.ToSmithyBuilder;
+
+import java.util.Optional;
 
 /**
  * Represents a {@code timestamp} shape.
@@ -44,12 +38,6 @@ public final class TimestampShape extends SimpleShape implements ToSmithyBuilder
     @Override
     public ShapeType getType() {
         return ShapeType.TIMESTAMP;
-    }
-
-    @Override
-    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
-        // The TimestampValidationStrategy and plugins check the node type instead
-        return new SimpleShapeValueValidator(model, this, EnumSet.allOf(NodeType.class), plugins);
     }
 
     /**

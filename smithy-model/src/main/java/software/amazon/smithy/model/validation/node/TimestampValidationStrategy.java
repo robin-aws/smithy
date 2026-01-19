@@ -8,6 +8,11 @@ import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.Shape;
+import software.amazon.smithy.model.shapes.ShapeType;
+import software.amazon.smithy.model.shapes.ShapeTypeFilter;
+
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 /**
  * Defines how timestamps are validated.
@@ -22,13 +27,13 @@ public enum TimestampValidationStrategy implements NodeValidatorPlugin {
      */
     FORMAT {
         @Override
-        public boolean appliesToShape(Model model, Shape shape) {
-            return new TimestampFormatPlugin().appliesToShape(model, shape);
+        public BiPredicate<Model, Shape> shapeMatcher() {
+            return new TimestampFormatPlugin().shapeMatcher();
         }
 
         @Override
-        public void applyToShape(Shape shape, Node value, Context context, Emitter emitter) {
-            new TimestampFormatPlugin().apply(shape, value, context, emitter);
+        public void applyMatching(Shape shape, Node value, Context context, Emitter emitter) {
+            new TimestampFormatPlugin().applyMatching(shape, value, context, emitter);
         }
     },
 
@@ -38,12 +43,12 @@ public enum TimestampValidationStrategy implements NodeValidatorPlugin {
      */
     EPOCH_SECONDS {
         @Override
-        public boolean appliesToShape(Model model, Shape shape) {
-            return TimestampValidationStrategy.isTimestampMember(model, shape);
+        public BiPredicate<Model, Shape> shapeMatcher() {
+            return new ShapeTypeFilter(ShapeType.TIMESTAMP);
         }
 
         @Override
-        public void applyToShape(Shape shape, Node value, Context context, Emitter emitter) {
+        public void applyMatching(Shape shape, Node value, Context context, Emitter emitter) {
             if (!value.isNumberNode()) {
                 emitter.accept(shape,
                         "Invalid " + value.getType() + " value provided for timestamp, `"
@@ -52,12 +57,4 @@ public enum TimestampValidationStrategy implements NodeValidatorPlugin {
             }
         }
     };
-
-    private static boolean isTimestampMember(Model model, Shape shape) {
-        return shape.asMemberShape()
-                .map(MemberShape::getTarget)
-                .flatMap(model::getShape)
-                .filter(Shape::isTimestampShape)
-                .isPresent();
-    }
 }

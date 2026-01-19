@@ -6,9 +6,13 @@ package software.amazon.smithy.model.validation.node;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
+
 import software.amazon.smithy.model.FromSourceLocation;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
@@ -17,6 +21,7 @@ import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
+import software.amazon.smithy.utils.ListUtils;
 import software.amazon.smithy.utils.SmithyInternalApi;
 
 /**
@@ -29,6 +34,14 @@ public interface NodeValidatorPlugin {
     String[] EMPTY_STRING_ARRAY = new String[0];
 
     /**
+     * The shapes this plugin applies to.
+     * MemberShapes that target matching shapes are also considered matching.
+     */
+    default BiPredicate<Model, Shape> shapeMatcher() {
+        return (m, s) -> true;
+    }
+
+    /**
      * Applies the plugin to the given shape, node value, and model.
      *
      * @param shape Shape being checked.
@@ -37,14 +50,39 @@ public interface NodeValidatorPlugin {
      * @param emitter Consumer to notify of validation event locations and messages.
      */
     default void apply(Shape shape, Node value, Context context, Emitter emitter) {
-        if (appliesToShape(context.model(), shape)) {
-            applyToShape(shape, value, context, emitter);
+        if (shapeMatcher().test(context.model(), shape)) {
+            applyMatching(shape, value, context, emitter);
         }
     }
 
-    boolean appliesToShape(Model model, Shape shape);
+    /**
+     * Applies the plugin to the given shape, node value, and model.
+     * Requires the shape to match the shapeMatcher().
+     *
+     * @param shape Shape being checked.
+     * @param value Value being evaluated.
+     * @param context Evaluation context.
+     * @param emitter Consumer to notify of validation event locations and messages.
+     */
+    void applyMatching(Shape shape, Node value, Context context, Emitter emitter);
 
-    void applyToShape(Shape shape, Node value, Context context, Emitter emitter);
+    /**
+     * @return Gets the built-in Node validation plugins.
+     */
+    static List<NodeValidatorPlugin> getBuiltins() {
+        return ListUtils.of(
+                new NonNumericFloatValuesPlugin(),
+                new BlobLengthPlugin(),
+                new CollectionLengthPlugin(),
+                new IdRefPlugin(),
+                new MapLengthPlugin(),
+                new PatternTraitPlugin(),
+                new RangeTraitPlugin(),
+                new StringEnumPlugin(),
+                new IntEnumPlugin(),
+                new StringLengthPlugin(),
+                new UniqueItemsPlugin());
+    }
 
     /**
      * Validation context to pass to each NodeValidatorPlugin.

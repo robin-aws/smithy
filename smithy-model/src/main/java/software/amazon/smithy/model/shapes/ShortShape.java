@@ -4,13 +4,9 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import java.util.List;
-import java.util.Optional;
-import software.amazon.smithy.model.Model;
-import software.amazon.smithy.model.validation.node.NaturalNumberShapeValueValidator;
-import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
-import software.amazon.smithy.model.validation.node.ShapeValueValidator;
 import software.amazon.smithy.utils.ToSmithyBuilder;
+
+import java.util.Optional;
 
 /**
  * Represents a {@code short} shape.
@@ -43,15 +39,6 @@ public final class ShortShape extends NumberShape implements ToSmithyBuilder<Sho
     @Override
     public ShapeType getType() {
         return ShapeType.SHORT;
-    }
-
-    @Override
-    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
-        return new NaturalNumberShapeValueValidator(model,
-                this,
-                Long.valueOf(Short.MIN_VALUE),
-                Long.valueOf(Short.MAX_VALUE),
-                plugins);
     }
 
     /**

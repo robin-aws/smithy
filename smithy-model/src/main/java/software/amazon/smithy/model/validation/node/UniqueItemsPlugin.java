@@ -5,6 +5,7 @@
 package software.amazon.smithy.model.validation.node;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -13,14 +14,15 @@ import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.CollectionShape;
 import software.amazon.smithy.model.shapes.Shape;
+import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.traits.UniqueItemsTrait;
 
 /**
  * Validates that items in lists with the `@uniqueItems` trait are unique.
  */
-public final class UniqueItemsPlugin extends MemberAndShapeTraitPlugin<CollectionShape, ArrayNode, UniqueItemsTrait> {
+public final class UniqueItemsPlugin extends MemberAndShapeTraitPlugin<ArrayNode, UniqueItemsTrait> {
     public UniqueItemsPlugin() {
-        super(CollectionShape.class, ArrayNode.class, UniqueItemsTrait.class);
+        super(EnumSet.of(ShapeType.LIST, ShapeType.SET), ArrayNode.class, UniqueItemsTrait.class);
     }
 
     @Override

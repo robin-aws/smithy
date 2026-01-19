@@ -22,8 +22,6 @@ import software.amazon.smithy.model.traits.DefaultTrait;
 import software.amazon.smithy.model.validation.AbstractValidator;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.ValidationEvent;
-import software.amazon.smithy.model.validation.node.ShapeValueValidator;
-import software.amazon.smithy.model.validation.node.ShapeValueValidatorIndex;
 import software.amazon.smithy.utils.SmithyInternalApi;
 
 @SmithyInternalApi
@@ -31,13 +29,13 @@ public final class DefaultTraitValidator extends AbstractValidator {
     @Override
     public List<ValidationEvent> validate(Model model) {
         List<ValidationEvent> events = new ArrayList<>();
-        ShapeValueValidator.Context context = null;
+        NodeValidationVisitor visitor = null;
         NeighborProvider reverse = NeighborProviderIndex.of(model).getReverseProvider();
 
         for (Shape shape : model.getShapesWithTrait(DefaultTrait.class)) {
             // Validates both root level constraints and member constraints against the default value.
             DefaultTrait trait = shape.expectTrait(DefaultTrait.class);
-            context = validateShapeValue(model, shape, trait, context, events);
+            visitor = validateShapeValue(model, shape, trait, visitor, events);
             Node value = trait.toNode();
 
             if (shape.isMemberShape()) {
@@ -79,31 +77,30 @@ public final class DefaultTraitValidator extends AbstractValidator {
         return events;
     }
 
-    private ShapeValueValidator.Context validateShapeValue(
+    private NodeValidationVisitor validateShapeValue(
             Model model,
             Shape shape,
             DefaultTrait trait,
-            ShapeValueValidator.Context context,
+            NodeValidationVisitor visitor,
             List<ValidationEvent> events
     ) {
         Node value = trait.toNode();
         Shape shapeTarget = shape;
-        ShapeValueValidatorIndex index = ShapeValueValidatorIndex.of(model);
 
         if (shape.isMemberShape()) {
             shapeTarget = model.expectShape(shape.asMemberShape().get().getTarget());
             // Any member can set the default to null, overriding the default of the target shape
             // causing the member to be considered nullable.
             if (value.isNullNode()) {
-                return context;
+                return visitor;
             }
         } else if (value.isNullNode()) {
             events.add(error(shape, trait, "The @default trait can be set to null only on members"));
-            return context;
+            return visitor;
         }
 
-        context = createOrReuseContext(model, context, shape);
-        events.addAll(index.validate(shape, value, context));
+        visitor = createOrReuseVisitor(model, visitor, value, shape);
+        events.addAll(shape.accept(visitor));
 
         switch (shapeTarget.getType()) {
             case BLOB:
@@ -152,19 +149,21 @@ public final class DefaultTraitValidator extends AbstractValidator {
                 break;
         }
 
-        return context;
+        return visitor;
     }
 
-    private ShapeValueValidator.Context createOrReuseContext(
+    private NodeValidationVisitor createOrReuseVisitor(
             Model model,
-            ShapeValueValidator.Context context,
+            NodeValidationVisitor visitor,
+            Node value,
             Shape shape
     ) {
-        if (context == null) {
-            return ShapeValueValidator.Context
+        if (visitor == null) {
+            return NodeValidationVisitor
                     .builder()
                     .model(model)
                     .eventId(getName())
+                    .value(value)
                     .startingContext("Error validating @default trait")
                     .eventShapeId(shape.getId())
                     // Use WARNING for range trait errors so that a Smithy model 1.0 to 2.0 conversion can automatically
@@ -172,8 +171,9 @@ public final class DefaultTraitValidator extends AbstractValidator {
                     .addFeature(NodeValidationVisitor.Feature.RANGE_TRAIT_ZERO_VALUE_WARNING)
                     .build();
         } else {
-            context.setEventShapeId(shape.getId());
-            return context;
+            visitor.setValue(value);
+            visitor.setEventShapeId(shape.getId());
+            return visitor;
         }
     }
 }

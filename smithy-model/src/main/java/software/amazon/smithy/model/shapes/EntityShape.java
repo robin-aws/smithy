@@ -4,16 +4,12 @@
  */
 package software.amazon.smithy.model.shapes;
 
+import software.amazon.smithy.utils.BuilderRef;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
-import software.amazon.smithy.model.Model;
-import software.amazon.smithy.model.validation.node.InvalidSchemaShapeValueValidator;
-import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
-import software.amazon.smithy.model.validation.node.ShapeValueValidator;
-import software.amazon.smithy.utils.BuilderRef;
 
 /**
  * Abstract class representing service and resource shapes.
@@ -123,11 +119,6 @@ public abstract class EntityShape extends Shape {
 
         EntityShape o = (EntityShape) other;
         return getResources().equals(o.getResources()) && getAllOperations().equals(o.getAllOperations());
-    }
-
-    @Override
-    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
-        return new InvalidSchemaShapeValueValidator(model, this, plugins);
     }
 
     /**

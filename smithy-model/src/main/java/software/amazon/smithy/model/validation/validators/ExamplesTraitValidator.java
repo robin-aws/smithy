@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.Set;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.knowledge.TopDownIndex;
-import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.shapes.OperationShape;
 import software.amazon.smithy.model.shapes.ServiceShape;
 import software.amazon.smithy.model.shapes.Shape;
@@ -19,6 +18,8 @@ import software.amazon.smithy.model.traits.ExamplesTrait;
 import software.amazon.smithy.model.validation.AbstractValidator;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.ValidationEvent;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
+import software.amazon.smithy.model.validation.node.ShapeValueValidatorIndex;
 
 /**
  * Validates that examples traits are valid for their operations.
@@ -38,13 +39,14 @@ public final class ExamplesTraitValidator extends AbstractValidator {
     private List<ValidationEvent> validateExamples(Model model, OperationShape shape, ExamplesTrait trait) {
         List<ValidationEvent> events = new ArrayList<>();
         List<ExamplesTrait.Example> examples = trait.getExamples();
+        ShapeValueValidatorIndex index = ShapeValueValidatorIndex.of(model);
 
         for (ExamplesTrait.Example example : examples) {
             boolean isOutputDefined = example.getOutput().isPresent();
             boolean isErrorDefined = example.getError().isPresent();
 
             model.getShape(shape.getInputShape()).ifPresent(input -> {
-                NodeValidationVisitor validator;
+                ShapeValueValidator.Context context;
                 if (example.getAllowConstraintErrors() && !isErrorDefined) {
                     events.add(error(shape,
                             trait,
@@ -52,8 +54,8 @@ public final class ExamplesTraitValidator extends AbstractValidator {
                                     "Example: `%s` has allowConstraintErrors enabled, so error must be defined.",
                                     example.getTitle())));
                 }
-                validator = createVisitor("input", example.getInput(), model, shape, example);
-                List<ValidationEvent> inputValidationEvents = input.accept(validator);
+                context = createContext("input", model, shape, example);
+                List<ValidationEvent> inputValidationEvents = index.validate(input, example.getInput(), context);
                 events.addAll(inputValidationEvents);
             });
 
@@ -65,29 +67,27 @@ public final class ExamplesTraitValidator extends AbstractValidator {
                                 example.getTitle())));
             } else if (isOutputDefined) {
                 model.getShape(shape.getOutputShape()).ifPresent(output -> {
-                    NodeValidationVisitor validator = createVisitor(
+                    ShapeValueValidator.Context context = createContext(
                             "output",
-                            example.getOutput().get(),
                             model,
                             shape,
                             example);
-                    events.addAll(output.accept(validator));
+                    events.addAll(index.validate(output, example.getOutput().get(), context));
                 });
             } else if (isErrorDefined) {
                 ExamplesTrait.ErrorExample errorExample = example.getError().get();
                 Optional<Shape> errorShape = model.getShape(errorExample.getShapeId());
                 if (errorShape.isPresent() && (
-                        // The error is directly bound to the operation.
-                        shape.getErrorsSet().contains(errorExample.getShapeId())
-                                // The error is bound to all services that contain the operation.
-                                || servicesContainError(model, shape, errorExample.getShapeId()))) {
-                    NodeValidationVisitor validator = createVisitor(
+                // The error is directly bound to the operation.
+                shape.getErrorsSet().contains(errorExample.getShapeId())
+                        // The error is bound to all services that contain the operation.
+                        || servicesContainError(model, shape, errorExample.getShapeId()))) {
+                    ShapeValueValidator.Context context = createContext(
                             "error",
-                            errorExample.getContent(),
                             model,
                             shape,
                             example);
-                    events.addAll(errorShape.get().accept(validator));
+                    events.addAll(index.validate(errorShape.get(), errorExample.getContent(), context));
                 } else {
                     events.add(error(shape,
                             trait,
@@ -126,17 +126,15 @@ public final class ExamplesTraitValidator extends AbstractValidator {
         return true;
     }
 
-    private NodeValidationVisitor createVisitor(
+    private ShapeValueValidator.Context createContext(
             String name,
-            ObjectNode value,
             Model model,
             Shape shape,
             ExamplesTrait.Example example
     ) {
-        NodeValidationVisitor.Builder builder = NodeValidationVisitor.builder()
+        ShapeValueValidator.Context.Builder builder = ShapeValueValidator.Context.builder()
                 .model(model)
                 .eventShapeId(shape.getId())
-                .value(value)
                 .startingContext("Example " + name + " of `" + example.getTitle() + "`")
                 .eventId(getName());
         if (example.getAllowConstraintErrors()) {

@@ -7,36 +7,24 @@ package software.amazon.smithy.model.validation.node;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
-import software.amazon.smithy.model.shapes.ShapeType;
-import software.amazon.smithy.model.shapes.ShapeTypeFilter;
-
-import java.util.EnumSet;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 abstract class FilteredPlugin<S extends Shape, N extends Node> implements NodeValidatorPlugin {
-    private final EnumSet<ShapeType> shapeTypes;
     private final Class<S> shapeClass;
     private final Class<N> nodeClass;
 
-    FilteredPlugin(ShapeType shapeType, Class<S> shapeClass, Class<N> nodeClass) {
-        if (!shapeType.getShapeClass().equals(shapeClass)) {
-            throw new IllegalArgumentException();
-        }
-        this.shapeTypes = EnumSet.of(shapeType);
+    FilteredPlugin(Class<S> shapeClass, Class<N> nodeClass) {
         this.shapeClass = shapeClass;
         this.nodeClass = nodeClass;
     }
 
     @Override
-    public BiPredicate<Model, Shape> shapeMatcher() {
-        // Only direct shapes, not member shapes pointing to them
-        return new ShapeTypeFilter(shapeTypes, EnumSet.noneOf(ShapeType.class));
+    public boolean appliesToShape(Model model, Shape shape) {
+        return shapeClass.isInstance(shape);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public final void applyMatching(Shape shape, Node value, Context context, Emitter emitter) {
+    public final void applyToShape(Shape shape, Node value, Context context, Emitter emitter) {
         if (nodeClass.isInstance(value)) {
             check((S) shape, (N) value, context, emitter);
         }

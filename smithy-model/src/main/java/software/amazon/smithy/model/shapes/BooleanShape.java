@@ -4,9 +4,15 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import software.amazon.smithy.utils.ToSmithyBuilder;
-
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.node.NodeType;
+import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
+import software.amazon.smithy.model.validation.node.SimpleShapeValueValidator;
+import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
  * Represents a {@code boolean} shape.
@@ -39,6 +45,11 @@ public final class BooleanShape extends SimpleShape implements ToSmithyBuilder<B
     @Override
     public ShapeType getType() {
         return ShapeType.BOOLEAN;
+    }
+
+    @Override
+    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
+        return new SimpleShapeValueValidator(model, this, EnumSet.of(NodeType.BOOLEAN), plugins);
     }
 
     /**

@@ -4,10 +4,14 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import software.amazon.smithy.utils.ToSmithyBuilder;
-
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
+import software.amazon.smithy.model.validation.node.UnionShapeValidator;
+import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
  * Tagged union shape that maps member names to member definitions.
@@ -53,6 +57,11 @@ public final class UnionShape extends Shape implements ToSmithyBuilder<UnionShap
     @Override
     public Map<String, MemberShape> getAllMembers() {
         return members;
+    }
+
+    @Override
+    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
+        return new UnionShapeValidator(model, this, plugins);
     }
 
     /**

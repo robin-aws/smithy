@@ -4,9 +4,13 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import software.amazon.smithy.utils.ToSmithyBuilder;
-
+import java.util.List;
 import java.util.Optional;
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.validation.node.BlobShapeValueValidator;
+import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
+import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
  * Represents a {@code blob} shape.
@@ -39,6 +43,11 @@ public final class BlobShape extends SimpleShape implements ToSmithyBuilder<Blob
     @Override
     public ShapeType getType() {
         return ShapeType.BLOB;
+    }
+
+    @Override
+    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
+        return new BlobShapeValueValidator(model, this, plugins);
     }
 
     /**

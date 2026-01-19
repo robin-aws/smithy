@@ -4,10 +4,14 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import software.amazon.smithy.utils.ToSmithyBuilder;
-
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
+import software.amazon.smithy.model.validation.node.StructureShapeValidator;
+import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
  * Structure shape that maps shape names to members.
@@ -56,6 +60,11 @@ public final class StructureShape extends Shape implements ToSmithyBuilder<Struc
     @Override
     public Map<String, MemberShape> getAllMembers() {
         return members;
+    }
+
+    @Override
+    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
+        return new StructureShapeValidator(model, this, plugins);
     }
 
     /**

@@ -7,22 +7,19 @@ package software.amazon.smithy.model.validation.node;
 import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.shapes.MapShape;
 import software.amazon.smithy.model.shapes.Shape;
-import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.traits.LengthTrait;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.utils.SmithyInternalApi;
 
-import java.util.EnumSet;
-
 /**
  * Validates the length trait on map shapes or members that target them.
  */
 @SmithyInternalApi
-public final class MapLengthPlugin extends MemberAndShapeTraitPlugin<ObjectNode, LengthTrait> {
+public final class MapLengthPlugin extends MemberAndShapeTraitPlugin<MapShape, ObjectNode, LengthTrait> {
 
     public MapLengthPlugin() {
-        super(EnumSet.of(ShapeType.MAP), ObjectNode.class, LengthTrait.class);
+        super(MapShape.class, ObjectNode.class, LengthTrait.class);
     }
 
     @Override

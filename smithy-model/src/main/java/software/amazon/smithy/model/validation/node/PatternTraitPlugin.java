@@ -6,21 +6,18 @@ package software.amazon.smithy.model.validation.node;
 
 import software.amazon.smithy.model.node.StringNode;
 import software.amazon.smithy.model.shapes.Shape;
-import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.shapes.StringShape;
 import software.amazon.smithy.model.traits.PatternTrait;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
 
-import java.util.EnumSet;
-
 /**
  * Validates the pattern trait on string shapes or members that target them.
  */
-public final class PatternTraitPlugin extends MemberAndShapeTraitPlugin<StringNode, PatternTrait> {
+public final class PatternTraitPlugin extends MemberAndShapeTraitPlugin<StringShape, StringNode, PatternTrait> {
 
     public PatternTraitPlugin() {
-        super(EnumSet.of(ShapeType.STRING), StringNode.class, PatternTrait.class);
+        super(StringShape.class, StringNode.class, PatternTrait.class);
     }
 
     @Override

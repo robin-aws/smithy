@@ -7,7 +7,6 @@ package software.amazon.smithy.model.validation.node;
 import java.util.Collection;
 import software.amazon.smithy.model.node.NumberNode;
 import software.amazon.smithy.model.shapes.IntEnumShape;
-import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.validation.ValidationUtils;
 
 /**
@@ -16,7 +15,7 @@ import software.amazon.smithy.model.validation.ValidationUtils;
 public final class IntEnumPlugin extends FilteredPlugin<IntEnumShape, NumberNode> {
 
     public IntEnumPlugin() {
-        super(ShapeType.INT_ENUM, IntEnumShape.class, NumberNode.class);
+        super(IntEnumShape.class, NumberNode.class);
     }
 
     @Override

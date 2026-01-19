@@ -4,7 +4,12 @@
  */
 package software.amazon.smithy.model.shapes;
 
+import java.util.List;
 import java.util.Optional;
+import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.validation.node.ListShapeValidator;
+import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
+import software.amazon.smithy.model.validation.node.ShapeValueValidator;
 import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
@@ -39,6 +44,11 @@ public class ListShape extends CollectionShape implements ToSmithyBuilder<ListSh
     @Override
     public ShapeType getType() {
         return ShapeType.LIST;
+    }
+
+    @Override
+    public ShapeValueValidator<?> createValueValidator(Model model, List<NodeValidatorPlugin> plugins) {
+        return new ListShapeValidator(model, this, plugins);
     }
 
     /**

@@ -4,7 +4,6 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -181,18 +180,5 @@ public enum ShapeType {
             default:
                 throw new IllegalStateException("Invalid shape type: " + this);
         }
-    }
-
-    public static EnumSet<ShapeType> NUMBER_TYPES = assignableTo(NumberShape.class);
-    public static EnumSet<ShapeType> COLLECTION_TYPES = assignableTo(CollectionShape.class);
-
-    private static EnumSet<ShapeType> assignableTo(Class<? extends Shape> klass) {
-        EnumSet<ShapeType> result = EnumSet.noneOf(ShapeType.class);
-        for (ShapeType shapeType : values()) {
-            if (klass.isAssignableFrom(shapeType.getShapeClass())) {
-                result.add(shapeType);
-            }
-        }
-        return result;
     }
 }

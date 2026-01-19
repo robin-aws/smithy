@@ -17,7 +17,7 @@ import software.amazon.smithy.model.validation.ValidationUtils;
 public final class StringEnumPlugin extends FilteredPlugin<StringShape, StringNode> {
 
     public StringEnumPlugin() {
-        super(ShapeType.STRING, StringShape.class, StringNode.class);
+        super(ShapeType.STRING_TYPES, StringShape.class, StringNode.class);
     }
 
     @Override

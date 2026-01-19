@@ -19,11 +19,13 @@ abstract class FilteredPlugin<S extends Shape, N extends Node> implements NodeVa
     private final Class<S> shapeClass;
     private final Class<N> nodeClass;
 
-    FilteredPlugin(ShapeType shapeType, Class<S> shapeClass, Class<N> nodeClass) {
-        if (!shapeType.getShapeClass().equals(shapeClass)) {
-            throw new IllegalArgumentException();
+    FilteredPlugin(EnumSet<ShapeType> shapeTypes, Class<S> shapeClass, Class<N> nodeClass) {
+        for (ShapeType shapeType : shapeTypes) {
+            if (!shapeClass.isAssignableFrom(shapeType.getShapeClass())) {
+                throw new IllegalArgumentException();
+            }
         }
-        this.shapeTypes = EnumSet.of(shapeType);
+        this.shapeTypes = shapeTypes;
         this.shapeClass = shapeClass;
         this.nodeClass = nodeClass;
     }

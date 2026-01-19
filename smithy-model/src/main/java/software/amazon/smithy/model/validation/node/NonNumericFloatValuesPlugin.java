@@ -22,7 +22,7 @@ public final class NonNumericFloatValuesPlugin implements NodeValidatorPlugin {
 
     @Override
     public BiPredicate<Model, Shape> shapeMatcher() {
-        return new ShapeTypeFilter(EnumSet.of(ShapeType.FLOAT, ShapeType.DOUBLE));
+        return new ShapeTypeFilter(EnumSet.of(ShapeType.FLOAT, ShapeType.DOUBLE), EnumSet.noneOf(ShapeType.class));
     }
 
     @Override

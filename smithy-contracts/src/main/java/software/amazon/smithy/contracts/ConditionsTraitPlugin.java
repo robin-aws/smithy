@@ -45,7 +45,8 @@ public class ConditionsTraitPlugin extends MemberAndShapeTraitPlugin<Node, Condi
                             "Value provided for `%s` must match the %s condition expression: %s",
                             shape.getId(),
                             condition.getId(),
-                            condition.getExpression()));
+                            condition.getExpression()),
+                    condition.getId());
         }
     }
 

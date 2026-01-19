@@ -26,3 +26,11 @@ structure FetchLogsInput {
     @required
     end: Timestamp
 }
+
+@conditions([
+    {
+        id: "NoKeywords",
+        expression: "!contains(@, 'id') && !contains(@, 'name')"
+    }
+])
+string Foo

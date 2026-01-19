@@ -17,6 +17,10 @@ use smithy.contracts#conditions
         id: "WrongType2",
         expression: "int"
     }
+    {
+        id: "MissingField",
+        expression: "foo"
+    }
 
 ])
 structure BadConditions {

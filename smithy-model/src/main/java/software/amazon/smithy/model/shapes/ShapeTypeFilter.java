@@ -38,7 +38,7 @@ public class ShapeTypeFilter implements BiPredicate<Model, Shape> {
         // Is the targeted member an expected shape type?
         return shape.asMemberShape()
                 .flatMap(member -> model.getShape(member.getTarget()))
-                .filter(s -> targetShapeTypes.contains(shapeType))
+                .filter(s -> targetShapeTypes.contains(s.getType()))
                 .isPresent();
     }
 

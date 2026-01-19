@@ -544,7 +544,7 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
                         .add(event(message, severity, location.getSourceLocation(), additionalEventIdParts)));
 
         for (NodeValidatorPlugin plugin : PLUGINS_BY_SHAPE_TYPE.get(model, shape)) {
-            plugin.apply(shape,
+            plugin.applyMatching(shape,
                     value,
                     validationContext,
                     (location, severity, message, additionalEventIdParts) -> events

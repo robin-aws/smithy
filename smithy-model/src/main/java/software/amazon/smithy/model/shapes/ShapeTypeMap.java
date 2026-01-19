@@ -43,10 +43,8 @@ public class ShapeTypeMap<T> {
         ShapeType shapeType = shape.getType();
         if (shapeType.equals(ShapeType.MEMBER)) {
             return shape.asMemberShape()
-                    .map(MemberShape::getTarget)
-                    .flatMap(model::getShape)
-                    .map(Shape::getType)
-                    .map(targetValues::get)
+                    .flatMap(member -> model.getShape(member.getTarget()))
+                    .map(s -> targetValues.get(s.getType()))
                     .orElse(Collections.emptyList());
         } else {
             return directValues.get(shapeType);

@@ -1,10 +1,11 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-
 package software.amazon.smithy.contracts;
 
+import java.util.ArrayList;
+import java.util.List;
 import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.ExpectationNotMetException;
 import software.amazon.smithy.model.node.Node;
@@ -16,9 +17,6 @@ import software.amazon.smithy.utils.BuilderRef;
 import software.amazon.smithy.utils.SmithyBuilder;
 import software.amazon.smithy.utils.SmithyGenerated;
 import software.amazon.smithy.utils.ToSmithyBuilder;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Restricts shape values to those that satisfy one or more JMESPath expressions.
@@ -72,7 +70,7 @@ public final class ConditionsTrait extends AbstractTrait implements ToSmithyBuil
      */
     public SmithyBuilder<ConditionsTrait> toBuilder() {
         return builder().sourceLocation(getSourceLocation())
-            .conditions(getConditions());
+                .conditions(getConditions());
     }
 
     public static Builder builder() {

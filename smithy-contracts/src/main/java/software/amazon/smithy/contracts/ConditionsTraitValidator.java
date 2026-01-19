@@ -4,6 +4,11 @@
  */
 package software.amazon.smithy.contracts;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import software.amazon.smithy.jmespath.ExpressionProblem;
 import software.amazon.smithy.jmespath.LinterResult;
 import software.amazon.smithy.jmespath.RuntimeType;
@@ -13,12 +18,6 @@ import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.validation.AbstractValidator;
 import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.ValidationEvent;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ConditionsTraitValidator extends AbstractValidator {
 
@@ -73,7 +72,12 @@ public class ConditionsTraitValidator extends AbstractValidator {
         return events;
     }
 
-    private void addJmespathEvent(List<ValidationEvent> events, Shape shape, Condition condition, ExpressionProblem problem) {
+    private void addJmespathEvent(
+            List<ValidationEvent> events,
+            Shape shape,
+            Condition condition,
+            ExpressionProblem problem
+    ) {
         Severity severity;
         String eventId;
         switch (problem.severity) {
@@ -83,11 +87,13 @@ public class ConditionsTraitValidator extends AbstractValidator {
                 break;
             case DANGER:
                 severity = Severity.DANGER;
-                eventId = getName() + "." + SmithyJmespathUtilities.JMESPATH_PROBLEM + "." + SmithyJmespathUtilities.JMES_PATH_DANGER + "." + condition.getId();
+                eventId = getName() + "." + SmithyJmespathUtilities.JMESPATH_PROBLEM + "."
+                        + SmithyJmespathUtilities.JMES_PATH_DANGER + "." + condition.getId();
                 break;
             default:
                 severity = Severity.WARNING;
-                eventId = getName() + "." + SmithyJmespathUtilities.JMESPATH_PROBLEM + "." + SmithyJmespathUtilities.JMES_PATH_WARNING + "." + condition.getId();
+                eventId = getName() + "." + SmithyJmespathUtilities.JMESPATH_PROBLEM + "."
+                        + SmithyJmespathUtilities.JMES_PATH_WARNING + "." + condition.getId();
                 break;
         }
 
@@ -96,11 +102,20 @@ public class ConditionsTraitValidator extends AbstractValidator {
                 severity,
                 shape,
                 condition,
-                String.format("Problem found in JMESPath expression (%s): %s", condition.getExpression(), problemMessage),
+                String.format("Problem found in JMESPath expression (%s): %s",
+                        condition.getExpression(),
+                        problemMessage),
                 eventId);
     }
 
-    private void addEvent(List<ValidationEvent> events, Severity severity, Shape shape, Condition condition, String message, String... eventIdParts) {
+    private void addEvent(
+            List<ValidationEvent> events,
+            Severity severity,
+            Shape shape,
+            Condition condition,
+            String message,
+            String... eventIdParts
+    ) {
         events.add(ValidationEvent.builder()
                 .id(String.join(".", eventIdParts))
                 .shape(shape)

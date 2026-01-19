@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-
 package software.amazon.smithy.contracts;
 
+import java.util.Optional;
 import software.amazon.smithy.jmespath.JmespathException;
 import software.amazon.smithy.jmespath.JmespathExpression;
 import software.amazon.smithy.model.FromSourceLocation;
@@ -16,8 +16,6 @@ import software.amazon.smithy.model.node.ToNode;
 import software.amazon.smithy.utils.SmithyBuilder;
 import software.amazon.smithy.utils.SmithyGenerated;
 import software.amazon.smithy.utils.ToSmithyBuilder;
-
-import java.util.Optional;
 
 @SmithyGenerated
 public final class Condition implements ToNode, ToSmithyBuilder<Condition>, FromSourceLocation {
@@ -44,10 +42,10 @@ public final class Condition implements ToNode, ToSmithyBuilder<Condition>, From
     @Override
     public Node toNode() {
         return Node.objectNodeBuilder()
-            .withMember("id", Node.from(id))
-            .withMember("expression", Node.from(expression))
-            .withOptionalMember("description", getDescription().map(Node::from))
-            .build();
+                .withMember("id", Node.from(id))
+                .withMember("expression", Node.from(expression))
+                .withOptionalMember("description", getDescription().map(Node::from))
+                .build();
     }
 
     /**
@@ -60,9 +58,9 @@ public final class Condition implements ToNode, ToSmithyBuilder<Condition>, From
     public static Condition fromNode(Node node) {
         Builder builder = builder().sourceLocation(node.getSourceLocation());
         node.expectObjectNode()
-            .expectStringMember("id", builder::id)
-            .expectStringMember("expression", builder::expression)
-            .getStringMember("description", builder::description);
+                .expectStringMember("id", builder::id)
+                .expectStringMember("expression", builder::expression)
+                .getStringMember("description", builder::description);
         return builder.build();
     }
 
@@ -103,9 +101,9 @@ public final class Condition implements ToNode, ToSmithyBuilder<Condition>, From
      */
     public SmithyBuilder<Condition> toBuilder() {
         return builder()
-            .id(id)
-            .expression(expression)
-            .description(description);
+                .id(id)
+                .expression(expression)
+                .description(description);
     }
 
     public static Builder builder() {

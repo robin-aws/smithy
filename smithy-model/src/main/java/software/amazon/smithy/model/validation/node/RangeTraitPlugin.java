@@ -4,6 +4,7 @@
  */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.function.BiPredicate;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.Node.NonNumericFloat;
@@ -15,9 +16,6 @@ import software.amazon.smithy.model.shapes.ShapeTypeFilter;
 import software.amazon.smithy.model.traits.RangeTrait;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
-
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 /**
  * Validates the range trait on number shapes or members that target them.

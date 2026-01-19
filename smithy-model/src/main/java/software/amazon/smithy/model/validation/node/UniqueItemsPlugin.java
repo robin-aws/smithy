@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Set;
 import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.Node;
-import software.amazon.smithy.model.shapes.CollectionShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.traits.UniqueItemsTrait;

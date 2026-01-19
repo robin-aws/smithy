@@ -8,7 +8,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.EnumSet;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;

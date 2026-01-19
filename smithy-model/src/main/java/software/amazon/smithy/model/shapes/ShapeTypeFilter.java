@@ -1,9 +1,12 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package software.amazon.smithy.model.shapes;
-
-import software.amazon.smithy.model.Model;
 
 import java.util.EnumSet;
 import java.util.function.BiPredicate;
+import software.amazon.smithy.model.Model;
 
 /**
  * A simple shape filter based on shape types.

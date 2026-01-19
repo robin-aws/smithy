@@ -4,9 +4,8 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import software.amazon.smithy.utils.ToSmithyBuilder;
-
 import java.util.Optional;
+import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
  * Represents a {@code boolean} shape.

@@ -4,12 +4,11 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import software.amazon.smithy.utils.BuilderRef;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import software.amazon.smithy.utils.BuilderRef;
 
 /**
  * Abstract class representing service and resource shapes.

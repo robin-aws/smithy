@@ -77,10 +77,10 @@ public final class ExamplesTraitValidator extends AbstractValidator {
                 ExamplesTrait.ErrorExample errorExample = example.getError().get();
                 Optional<Shape> errorShape = model.getShape(errorExample.getShapeId());
                 if (errorShape.isPresent() && (
-                        // The error is directly bound to the operation.
-                        shape.getErrorsSet().contains(errorExample.getShapeId())
-                                // The error is bound to all services that contain the operation.
-                                || servicesContainError(model, shape, errorExample.getShapeId()))) {
+                // The error is directly bound to the operation.
+                shape.getErrorsSet().contains(errorExample.getShapeId())
+                        // The error is bound to all services that contain the operation.
+                        || servicesContainError(model, shape, errorExample.getShapeId()))) {
                     NodeValidationVisitor validator = createVisitor(
                             "error",
                             errorExample.getContent(),

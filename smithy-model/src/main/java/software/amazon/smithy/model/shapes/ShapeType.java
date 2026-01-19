@@ -183,9 +183,9 @@ public enum ShapeType {
         }
     }
 
-    public static EnumSet<ShapeType> NUMBER_TYPES = assignableTo(NumberShape.class);
-    public static EnumSet<ShapeType> STRING_TYPES = assignableTo(StringShape.class);
-    public static EnumSet<ShapeType> COLLECTION_TYPES = assignableTo(CollectionShape.class);
+    public static final EnumSet<ShapeType> NUMBER_TYPES = assignableTo(NumberShape.class);
+    public static final EnumSet<ShapeType> STRING_TYPES = assignableTo(StringShape.class);
+    public static final EnumSet<ShapeType> COLLECTION_TYPES = assignableTo(CollectionShape.class);
 
     private static EnumSet<ShapeType> assignableTo(Class<? extends Shape> klass) {
         EnumSet<ShapeType> result = EnumSet.noneOf(ShapeType.class);

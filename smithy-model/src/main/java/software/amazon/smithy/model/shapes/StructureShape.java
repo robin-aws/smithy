@@ -4,10 +4,9 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import software.amazon.smithy.utils.ToSmithyBuilder;
-
 import java.util.Map;
 import java.util.Optional;
+import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
  * Structure shape that maps shape names to members.

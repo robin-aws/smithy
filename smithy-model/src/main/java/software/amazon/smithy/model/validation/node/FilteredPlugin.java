@@ -4,15 +4,13 @@
  */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.EnumSet;
+import java.util.function.BiPredicate;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.shapes.ShapeTypeFilter;
-
-import java.util.EnumSet;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 abstract class FilteredPlugin<S extends Shape, N extends Node> implements NodeValidatorPlugin {
     private final EnumSet<ShapeType> shapeTypes;

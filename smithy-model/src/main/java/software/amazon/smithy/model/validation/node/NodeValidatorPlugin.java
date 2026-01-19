@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
-
 import software.amazon.smithy.model.FromSourceLocation;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;

@@ -4,14 +4,6 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import software.amazon.smithy.model.SourceException;
-import software.amazon.smithy.model.knowledge.OperationIndex;
-import software.amazon.smithy.model.traits.MixinTrait;
-import software.amazon.smithy.model.traits.UnitTypeTrait;
-import software.amazon.smithy.utils.BuilderRef;
-import software.amazon.smithy.utils.ListUtils;
-import software.amazon.smithy.utils.ToSmithyBuilder;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,6 +12,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import software.amazon.smithy.model.SourceException;
+import software.amazon.smithy.model.knowledge.OperationIndex;
+import software.amazon.smithy.model.traits.MixinTrait;
+import software.amazon.smithy.model.traits.UnitTypeTrait;
+import software.amazon.smithy.utils.BuilderRef;
+import software.amazon.smithy.utils.ListUtils;
+import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
  * Represents an API operation.

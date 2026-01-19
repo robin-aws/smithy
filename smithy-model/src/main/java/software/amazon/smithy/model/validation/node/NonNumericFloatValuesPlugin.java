@@ -7,8 +7,6 @@ package software.amazon.smithy.model.validation.node;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
-
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.Node.NonNumericFloat;

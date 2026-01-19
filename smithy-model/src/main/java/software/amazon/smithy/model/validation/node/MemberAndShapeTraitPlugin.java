@@ -4,16 +4,14 @@
  */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.EnumSet;
+import java.util.function.BiPredicate;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.shapes.ShapeTypeFilter;
 import software.amazon.smithy.model.traits.Trait;
-
-import java.util.EnumSet;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 public abstract class MemberAndShapeTraitPlugin<N extends Node, T extends Trait>
         implements NodeValidatorPlugin {

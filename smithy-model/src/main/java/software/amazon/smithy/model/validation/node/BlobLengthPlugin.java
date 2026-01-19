@@ -7,9 +7,7 @@ package software.amazon.smithy.model.validation.node;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.EnumSet;
-
 import software.amazon.smithy.model.node.StringNode;
-import software.amazon.smithy.model.shapes.BlobShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.traits.LengthTrait;

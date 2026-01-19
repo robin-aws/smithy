@@ -1,12 +1,15 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package software.amazon.smithy.model.shapes;
-
-import software.amazon.smithy.model.Model;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.function.BiPredicate;
+import software.amazon.smithy.model.Model;
 
 public class ShapeTypeMap<T> {
 

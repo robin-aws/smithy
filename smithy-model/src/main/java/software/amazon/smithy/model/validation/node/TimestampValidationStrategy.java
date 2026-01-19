@@ -4,15 +4,12 @@
  */
 package software.amazon.smithy.model.validation.node;
 
+import java.util.function.BiPredicate;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.node.Node;
-import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.shapes.ShapeTypeFilter;
-
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 /**
  * Defines how timestamps are validated.

@@ -4,6 +4,7 @@
  */
 package software.amazon.smithy.contracts;
 
+import java.util.EnumSet;
 import software.amazon.smithy.jmespath.JmespathExpression;
 import software.amazon.smithy.jmespath.evaluation.Evaluator;
 import software.amazon.smithy.model.jmespath.node.NodeJmespathRuntime;
@@ -13,8 +14,6 @@ import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.Severity;
 import software.amazon.smithy.model.validation.node.MemberAndShapeTraitPlugin;
-
-import java.util.EnumSet;
 
 public class ConditionsTraitPlugin extends MemberAndShapeTraitPlugin<Node, ConditionsTrait> {
 

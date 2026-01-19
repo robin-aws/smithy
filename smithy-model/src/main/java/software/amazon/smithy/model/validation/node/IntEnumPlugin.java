@@ -6,7 +6,6 @@ package software.amazon.smithy.model.validation.node;
 
 import java.util.Collection;
 import java.util.EnumSet;
-
 import software.amazon.smithy.model.node.NumberNode;
 import software.amazon.smithy.model.shapes.IntEnumShape;
 import software.amazon.smithy.model.shapes.ShapeType;

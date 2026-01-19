@@ -4,14 +4,6 @@
  */
 package software.amazon.smithy.model.shapes;
 
-import software.amazon.smithy.model.SourceException;
-import software.amazon.smithy.model.SourceLocation;
-import software.amazon.smithy.model.traits.Trait;
-import software.amazon.smithy.utils.ListUtils;
-import software.amazon.smithy.utils.Pair;
-import software.amazon.smithy.utils.SetUtils;
-import software.amazon.smithy.utils.ToSmithyBuilder;
-
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,6 +13,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import software.amazon.smithy.model.SourceException;
+import software.amazon.smithy.model.SourceLocation;
+import software.amazon.smithy.model.traits.Trait;
+import software.amazon.smithy.utils.ListUtils;
+import software.amazon.smithy.utils.Pair;
+import software.amazon.smithy.utils.SetUtils;
+import software.amazon.smithy.utils.ToSmithyBuilder;
 
 /**
  * Represents a {@code map} shape.

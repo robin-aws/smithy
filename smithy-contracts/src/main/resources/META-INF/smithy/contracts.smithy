@@ -12,7 +12,7 @@ list conditions {
 structure Condition {
     /// The identifier of the conditions.
     /// The provided `id` MUST match Smithy's `IDENTIFIER` ABNF.
-    /// No two conditions can share the same ID.
+    /// No two conditions on a single shape can share the same ID.
     @required
     @pattern("^[A-Za-z_][A-Za-z0-9_]+$")
     id: String

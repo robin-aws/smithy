@@ -4,7 +4,6 @@
  */
 plugins {
     id("smithy.module-conventions")
-    id("smithy.profiling-conventions")
 }
 
 description = "Smithy contracts."

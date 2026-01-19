@@ -4,6 +4,7 @@ import software.amazon.smithy.model.Model;
 
 import java.util.EnumSet;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 /**
  * A simple shape filter based on shape types.
@@ -30,12 +31,12 @@ public class ShapeTypeFilter implements BiPredicate<Model, Shape> {
     public boolean test(Model model, Shape shape) {
         ShapeType shapeType = shape.getType();
 
-        // Is the shape an expected shape type?
+        // Is the shape the expected shape type?
         if (directShapeTypes.contains(shapeType)) {
             return true;
         }
 
-        // Is the targeted member an expected shape type?
+        // Is the targeted member an instance of the expected shape?
         return shape.asMemberShape()
                 .flatMap(member -> model.getShape(member.getTarget()))
                 .filter(s -> targetShapeTypes.contains(shapeType))
@@ -46,7 +47,7 @@ public class ShapeTypeFilter implements BiPredicate<Model, Shape> {
         return directShapeTypes;
     }
 
-    public EnumSet<ShapeType> targetShapeTypes() {
-        return targetShapeTypes;
+    public EnumSet<ShapeType> memberShapeTypes() {
+        return directShapeTypes;
     }
 }

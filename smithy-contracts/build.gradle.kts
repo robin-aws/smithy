@@ -5,7 +5,6 @@
 plugins {
     id("smithy.module-conventions")
     id("smithy.profiling-conventions")
-    id("software.amazon.smithy.gradle.smithy-trait-package").version("1.3.0")
 }
 
 description = "Smithy contracts."

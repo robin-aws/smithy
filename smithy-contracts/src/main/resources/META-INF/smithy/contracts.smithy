@@ -4,12 +4,19 @@ namespace smithy.contracts
 
 /// Restricts shape values to those that satisfy one or more JMESPath expressions.
 /// Each expression must produce 'true'.
-@trait(selector: "*")
+@trait(selector: ":not(:test(service, operation, resource))")
 list conditions {
     member: Condition
 }
 
 structure Condition {
+    /// The identifier of the conditions.
+    /// The provided `id` MUST match Smithy's `IDENTIFIER` ABNF.
+    /// No two conditions can share the same ID.
+    @required
+    @pattern("^[A-Za-z_][A-Za-z0-9_]+$")
+    id: String
+
     /// JMESPath expression that must evaluate to true.
     @required
     expression: String

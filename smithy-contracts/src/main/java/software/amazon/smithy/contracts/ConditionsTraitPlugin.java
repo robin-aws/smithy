@@ -21,7 +21,7 @@ public class ConditionsTraitPlugin extends MemberAndShapeTraitPlugin<Shape, Node
 
     @Override
     protected void check(Shape shape, ConditionsTrait trait, Node value, Context context, Emitter emitter) {
-        for (Condition condition : trait.getValues()) {
+        for (Condition condition : trait.getConditions()) {
             checkCondition(shape, condition, value, context, emitter);
         }
     }
@@ -40,8 +40,9 @@ public class ConditionsTraitPlugin extends MemberAndShapeTraitPlugin<Shape, Node
             emitter.accept(value,
                     getSeverity(context),
                     String.format(
-                            "Value provided for `%s` must match condition expression: %s",
+                            "Value provided for `%s` must match the %s condition expression: %s",
                             shape.getId(),
+                            condition.getId(),
                             condition.getExpression()));
         }
     }

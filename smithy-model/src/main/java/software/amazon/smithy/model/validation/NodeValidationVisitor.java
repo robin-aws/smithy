@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -16,6 +17,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
+
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceLocation;
 import software.amazon.smithy.model.knowledge.NullableIndex;
@@ -40,6 +44,9 @@ import software.amazon.smithy.model.shapes.ResourceShape;
 import software.amazon.smithy.model.shapes.ServiceShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
+import software.amazon.smithy.model.shapes.ShapeType;
+import software.amazon.smithy.model.shapes.ShapeTypeFilter;
+import software.amazon.smithy.model.shapes.ShapeTypeMap;
 import software.amazon.smithy.model.shapes.ShapeVisitor;
 import software.amazon.smithy.model.shapes.ShortShape;
 import software.amazon.smithy.model.shapes.StringShape;
@@ -64,6 +71,23 @@ import software.amazon.smithy.utils.SmithyBuilder;
 public final class NodeValidationVisitor implements ShapeVisitor<List<ValidationEvent>> {
 
     private static final List<NodeValidatorPlugin> BUILTIN = NodeValidatorPlugin.getBuiltins(); // keep package-private
+    private static final List<NodeValidatorPlugin> SPI_PLUGINS = loadSpiPlugins();
+
+    private static List<NodeValidatorPlugin> loadSpiPlugins() {
+        List<NodeValidatorPlugin> result = new ArrayList<>();
+        ServiceLoader.load(NodeValidatorPlugin.class).forEach(result::add);
+        return result;
+    }
+
+    private static final ShapeTypeMap<NodeValidatorPlugin> PLUGINS_BY_SHAPE_TYPE = new ShapeTypeMap<>();
+    static {
+        BUILTIN.forEach(NodeValidationVisitor::addPlugin);
+        SPI_PLUGINS.forEach(NodeValidationVisitor::addPlugin);
+    }
+
+    private static void addPlugin(NodeValidatorPlugin plugin) {
+        PLUGINS_BY_SHAPE_TYPE.add(plugin.shapeMatcher(), plugin);
+    }
 
     private final Model model;
     private final TimestampValidationStrategy timestampValidationStrategy;
@@ -519,7 +543,7 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
                 (location, severity, message, additionalEventIdParts) -> events
                         .add(event(message, severity, location.getSourceLocation(), additionalEventIdParts)));
 
-        for (NodeValidatorPlugin plugin : BUILTIN) {
+        for (NodeValidatorPlugin plugin : PLUGINS_BY_SHAPE_TYPE.get(model, shape)) {
             plugin.apply(shape,
                     value,
                     validationContext,

@@ -1,4 +1,12 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package software.amazon.smithy.contracts;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.isA;
 
 import org.junit.jupiter.api.Test;
 import software.amazon.smithy.jmespath.ast.AndExpression;
@@ -6,10 +14,6 @@ import software.amazon.smithy.jmespath.ast.ComparatorExpression;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isA;
 
 public class ConditionsTraitTest {
     @Test
@@ -34,5 +38,3 @@ public class ConditionsTraitTest {
     }
 
 }
-
-

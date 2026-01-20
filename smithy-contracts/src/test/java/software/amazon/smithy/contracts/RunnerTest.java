@@ -4,13 +4,12 @@
  */
 package software.amazon.smithy.contracts;
 
+import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.smithy.model.validation.testrunner.SmithyTestCase;
 import software.amazon.smithy.model.validation.testrunner.SmithyTestSuite;
-
-import java.util.concurrent.Callable;
-import java.util.stream.Stream;
 
 public class RunnerTest {
     @ParameterizedTest(name = "{0}")

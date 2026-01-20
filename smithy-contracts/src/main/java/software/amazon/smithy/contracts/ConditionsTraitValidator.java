@@ -13,7 +13,7 @@ import software.amazon.smithy.jmespath.ExpressionProblem;
 import software.amazon.smithy.jmespath.LinterResult;
 import software.amazon.smithy.jmespath.RuntimeType;
 import software.amazon.smithy.model.Model;
-import software.amazon.smithy.model.jmespath.node.SmithyJmespathUtilities;
+import software.amazon.smithy.model.jmespath.node.ModelJmespathUtilities;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.validation.AbstractValidator;
 import software.amazon.smithy.model.validation.Severity;
@@ -56,7 +56,7 @@ public class ConditionsTraitValidator extends AbstractValidator {
     private List<ValidationEvent> validateCondition(Model model, Shape shape, Condition condition) {
         List<ValidationEvent> events = new ArrayList<>();
 
-        LinterResult result = SmithyJmespathUtilities.lint(model, shape, condition.getParsedExpression());
+        LinterResult result = ModelJmespathUtilities.lint(model, shape, condition.getParsedExpression());
         for (ExpressionProblem problem : result.getProblems()) {
             addJmespathEvent(events, shape, condition, problem);
         }
@@ -87,13 +87,13 @@ public class ConditionsTraitValidator extends AbstractValidator {
                 break;
             case DANGER:
                 severity = Severity.DANGER;
-                eventId = getName() + "." + SmithyJmespathUtilities.JMESPATH_PROBLEM + "."
-                        + SmithyJmespathUtilities.JMES_PATH_DANGER + "." + condition.getId();
+                eventId = getName() + "." + ModelJmespathUtilities.JMESPATH_PROBLEM + "."
+                        + ModelJmespathUtilities.JMES_PATH_DANGER + "." + condition.getId();
                 break;
             default:
                 severity = Severity.WARNING;
-                eventId = getName() + "." + SmithyJmespathUtilities.JMESPATH_PROBLEM + "."
-                        + SmithyJmespathUtilities.JMES_PATH_WARNING + "." + condition.getId();
+                eventId = getName() + "." + ModelJmespathUtilities.JMESPATH_PROBLEM + "."
+                        + ModelJmespathUtilities.JMES_PATH_WARNING + "." + condition.getId();
                 break;
         }
 

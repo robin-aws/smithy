@@ -10,16 +10,19 @@ import software.amazon.smithy.jmespath.ast.LiteralExpression;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.shapes.Shape;
 
-public class SmithyJmespathUtilities {
+public class ModelJmespathUtilities {
 
     public static final String JMESPATH_PROBLEM = "JmespathProblem";
     public static final String JMES_PATH_DANGER = "JmespathEventDanger";
     public static final String JMES_PATH_WARNING = "JmespathEventWarning";
 
     public static LinterResult lint(Model model, Shape shape, JmespathExpression expression) {
-        LiteralExpression input = shape == null
+        return expression.lint(sampleShapeValue(model, shape));
+    }
+
+    public static LiteralExpression sampleShapeValue(Model model, Shape shape) {
+        return shape == null
                 ? LiteralExpression.ANY
                 : new LiteralExpression(shape.accept(new ModelRuntimeTypeGenerator(model)));
-        return expression.lint(input);
     }
 }

@@ -1,4 +1,4 @@
-.. _constraint-traits:
+.. _contract-traits:
 
 -----------------
 Contract traits
@@ -23,7 +23,7 @@ or applying static analysis to client or service code.
 .. _conditions-trait:
 
 ``conditions`` trait
-===============
+====================
 
 Summary
     Restricts shape values to those which satisfy the given JMESPath expressions.

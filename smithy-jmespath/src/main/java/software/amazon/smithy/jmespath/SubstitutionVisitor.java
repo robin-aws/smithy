@@ -36,7 +36,7 @@ public class SubstitutionVisitor implements ExpressionVisitor<JmespathExpression
         this.substitution = substitution;
     }
 
-    private JmespathExpression visit(JmespathExpression expression) {
+    public JmespathExpression visit(JmespathExpression expression) {
         JmespathExpression result = substitution.apply(expression);
         return result != null ? result : expression.accept(this);
     }

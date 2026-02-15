@@ -6,11 +6,16 @@ package software.amazon.smithy.jmespath.evaluation;
 
 import software.amazon.smithy.jmespath.JmespathException;
 import software.amazon.smithy.jmespath.JmespathExceptionType;
+import software.amazon.smithy.jmespath.JmespathExpression;
 import software.amazon.smithy.jmespath.JmespathExtension;
+import software.amazon.smithy.jmespath.ast.FunctionExpression;
+import software.amazon.smithy.jmespath.ast.ResolvedFunctionExpression;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.stream.Collectors;
 
 public final class FunctionRegistry<T> {
 
@@ -48,5 +53,17 @@ public final class FunctionRegistry<T> {
         }
 
         throw new JmespathException(JmespathExceptionType.UNKNOWN_FUNCTION, "Unknown function: " + name);
+    }
+
+    public JmespathExpression resolve(JmespathAbstractRuntime<T> runtime, JmespathExpression expression) {
+        if (expression instanceof FunctionExpression) {
+            FunctionExpression functionExpression = (FunctionExpression)expression;
+            Function<T> function = lookup(functionExpression.getName());
+            List<JmespathExpression> resolvedArguments = functionExpression.getArguments().stream()
+                    .map(e -> resolve(runtime, e))
+                    .collect(Collectors.toList());
+            return new ResolvedFunctionExpression<>(runtime, function, resolvedArguments);
+        }
+        return null;
     }
 }

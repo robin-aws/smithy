@@ -5,8 +5,6 @@
 package software.amazon.smithy.jmespath.evaluation;
 
 import software.amazon.smithy.jmespath.ExpressionVisitor;
-import software.amazon.smithy.jmespath.JmespathException;
-import software.amazon.smithy.jmespath.JmespathExceptionType;
 import software.amazon.smithy.jmespath.JmespathExpression;
 import software.amazon.smithy.jmespath.RuntimeType;
 import software.amazon.smithy.jmespath.SubstitutionVisitor;
@@ -26,6 +24,7 @@ import software.amazon.smithy.jmespath.ast.NotExpression;
 import software.amazon.smithy.jmespath.ast.ObjectProjectionExpression;
 import software.amazon.smithy.jmespath.ast.OrExpression;
 import software.amazon.smithy.jmespath.ast.ProjectionExpression;
+import software.amazon.smithy.jmespath.ast.ResolvedFunctionExpression;
 import software.amazon.smithy.jmespath.ast.SliceExpression;
 import software.amazon.smithy.jmespath.ast.Subexpression;
 
@@ -61,6 +60,10 @@ public class AbstractEvaluator<T> implements ExpressionVisitor<T> {
 
     public JmespathAbstractRuntime<T> runtime() {
         return runtime;
+    }
+
+    public FunctionRegistry<T> functions() {
+        return functions;
     }
 
     public T visit(JmespathExpression expression) {
@@ -117,8 +120,6 @@ public class AbstractEvaluator<T> implements ExpressionVisitor<T> {
 
     @Override
     public T visitFunction(FunctionExpression functionExpression) {
-        // TODO: Change API so we can resolve ahead of time once
-        Function<T> resolved = functions.lookup(runtime, functionExpression.getName());
         List<FunctionArgument<T>> arguments = new ArrayList<>();
         for (JmespathExpression expr : functionExpression.getArguments()) {
             if (expr instanceof ExpressionTypeExpression) {
@@ -127,7 +128,7 @@ public class AbstractEvaluator<T> implements ExpressionVisitor<T> {
                 arguments.add(runtime.createFunctionArgument(visit(expr)));
             }
         }
-        return resolved.apply(this, arguments);
+        return functionExpression.apply(this, arguments);
     }
 
     @Override
@@ -302,6 +303,8 @@ public class AbstractEvaluator<T> implements ExpressionVisitor<T> {
     }
 
     // Helpers
+
+    // TODO: Eliminate the lookup by compiling ahead of time
 
     public T ifThenElse(T condition, T then, T otherwise) {
         return functions.lookup(runtime, "if").apply(this, condition, then, otherwise);

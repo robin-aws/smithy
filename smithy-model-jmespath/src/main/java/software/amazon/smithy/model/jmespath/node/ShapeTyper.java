@@ -40,7 +40,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 /**
- * Generates fake data from a modeled shape for static JMESPath analysis.
+ * Extracts a JMESPath Type from a modeled shape for static JMESPath analysis.
  */
 final class ShapeTyper implements ShapeVisitor<Type> {
 
@@ -152,10 +152,12 @@ final class ShapeTyper implements ShapeVisitor<Type> {
 
     private Type structureOrUnion(Shape shape) {
         return withCopiedVisitors(() -> {
-            Map<String, Type> result = new LinkedHashMap<>();
+            Map<Type, Type> result = new LinkedHashMap<>();
             for (MemberShape member : shape.members()) {
-                Type memberType = member.accept(this);
-                result.put(member.getMemberName(), memberType);
+                // TODO: Need LiteralType or similar to be effective
+                Type keyType = Type.stringType();
+                Type valueType = member.accept(this);
+                result.put(keyType, valueType);
             }
             return new ObjectType(result);
         });
@@ -165,7 +167,7 @@ final class ShapeTyper implements ShapeVisitor<Type> {
     public Type memberShape(MemberShape shape) {
         // Account for recursive shapes.
         // A false return value means it was in the set.
-        // TODO: Can Type represent recursive types?
+        // TODO: Type should be able to represent recursive types
         if (!visited.add(shape)) {
             return Type.anyType();
         }

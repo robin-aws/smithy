@@ -6,8 +6,15 @@ package software.amazon.smithy.jmespath.ast;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
 import software.amazon.smithy.jmespath.ExpressionVisitor;
 import software.amazon.smithy.jmespath.JmespathExpression;
+import software.amazon.smithy.jmespath.evaluation.AbstractEvaluator;
+import software.amazon.smithy.jmespath.evaluation.Function;
+import software.amazon.smithy.jmespath.evaluation.FunctionArgument;
+import software.amazon.smithy.jmespath.evaluation.FunctionRegistry;
+import software.amazon.smithy.jmespath.evaluation.JmespathAbstractRuntime;
 
 /**
  * Executes a function by name using a list of argument expressions.
@@ -66,6 +73,20 @@ public class FunctionExpression extends JmespathExpression {
     @Override
     public int hashCode() {
         return Objects.hash(getName(), getArguments());
+    }
+
+    @Override
+    public <T> JmespathExpression resolve(JmespathAbstractRuntime<T> runtime, FunctionRegistry<T> functions) {
+        Function<T> function = functions.lookup(runtime, name);
+        List<JmespathExpression> resolvedArguments = arguments.stream()
+                .map(e -> e.resolveRec(runtime, functions))
+                .collect(Collectors.toList());
+        return new ResolvedFunctionExpression<>(runtime, function, resolvedArguments);
+    }
+
+    public <T> T apply(AbstractEvaluator<T> evaluator, List<FunctionArgument<T>> arguments) {
+        Function<T> function = evaluator.functions().lookup(evaluator.runtime(), name);
+        return function.apply(evaluator, arguments);
     }
 
     @Override

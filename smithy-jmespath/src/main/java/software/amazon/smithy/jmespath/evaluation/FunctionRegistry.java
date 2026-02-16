@@ -37,7 +37,7 @@ public final class FunctionRegistry<T> {
         }
     }
 
-    public Function<T> lookup(String name) {
+    public Function<T> get(String name) {
         return functions.get(name);
     }
 
@@ -47,23 +47,14 @@ public final class FunctionRegistry<T> {
             return result;
         }
 
-        result = functions.get(name);
-        if (result != null) {
-            return result;
-        }
-
-        throw new JmespathException(JmespathExceptionType.UNKNOWN_FUNCTION, "Unknown function: " + name);
+        return functions.get(name);
     }
 
-    public JmespathExpression resolve(JmespathAbstractRuntime<T> runtime, JmespathExpression expression) {
-        if (expression instanceof FunctionExpression) {
-            FunctionExpression functionExpression = (FunctionExpression)expression;
-            Function<T> function = lookup(functionExpression.getName());
-            List<JmespathExpression> resolvedArguments = functionExpression.getArguments().stream()
-                    .map(e -> resolve(runtime, e))
-                    .collect(Collectors.toList());
-            return new ResolvedFunctionExpression<>(runtime, function, resolvedArguments);
+    public T apply(AbstractEvaluator<T> evaluator, String name, List<FunctionArgument<T>> arguments) {
+        Function<T> function = lookup(evaluator.runtime(), name);
+        if (function == null) {
+            return evaluator.runtime().createError(JmespathExceptionType.UNKNOWN_FUNCTION, "Unknown function: " + name);
         }
-        return null;
+        return function.apply(evaluator, arguments);
     }
 }

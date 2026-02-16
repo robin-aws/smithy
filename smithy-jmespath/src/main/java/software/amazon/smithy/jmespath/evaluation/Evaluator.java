@@ -174,8 +174,8 @@ public class Evaluator<T> extends AbstractEvaluator<T> {
         }
         JmespathRuntime.ArrayBuilder<T> projectedResults = runtime.arrayBuilder();
         for (T result : runtime.asIterable(resultList)) {
-            T projected = new Evaluator<T>(result, runtime, functions).visit(projectionExpression.getRight());
-            if (!runtime.typeOf(projected).equals(RuntimeType.NULL)) {
+            T projected = new Evaluator<>(result, runtime, functions).visit(projectionExpression.getRight());
+            if (!runtime.is(projected, RuntimeType.NULL)) {
                 projectedResults.add(projected);
             }
         }

@@ -21,10 +21,9 @@ import software.amazon.smithy.jmespath.evaluation.EvaluationUtils;
 import software.amazon.smithy.jmespath.evaluation.Evaluator;
 import software.amazon.smithy.jmespath.evaluation.JmespathAbstractRuntime;
 import software.amazon.smithy.jmespath.evaluation.JmespathRuntime;
-import software.amazon.smithy.jmespath.type.Type;
 import software.amazon.smithy.utils.IoUtils;
 
-public class ComplianceTestRunner<T, A extends Type> {
+public class ComplianceTestRunner<T, A> {
     private static final String DEFAULT_TEST_CASE_LOCATION = "compliance";
     private static final String SUBJECT_MEMBER = "given";
     private static final String CASES_MEMBER = "cases";
@@ -35,24 +34,26 @@ public class ComplianceTestRunner<T, A extends Type> {
     private static final String BENCH_MEMBER = "bench";
     private final JmespathRuntime<T> runtime;
     private final JmespathAbstractRuntime<A> abstractRuntime;
+    private final BiPredicate<A, T> instanceTest;
     private final List<TestCase<T, A>> testCases = new ArrayList<>();
 
-    private ComplianceTestRunner(JmespathRuntime<T> runtime, JmespathAbstractRuntime<A> abstractRuntime) {
+    private ComplianceTestRunner(JmespathRuntime<T> runtime, JmespathAbstractRuntime<A> abstractRuntime, BiPredicate<A, T> instanceTest) {
         this.runtime = runtime;
         this.abstractRuntime = abstractRuntime;
+        this.instanceTest = instanceTest;
     }
 
     public static <T> Stream<Object[]> defaultParameterizedTestSource(JmespathRuntime<T> runtime) {
-        return defaultParameterizedTestSource(runtime, null);
+        return defaultParameterizedTestSource(runtime, null, null);
     }
 
-    public static <T, A extends Type> Stream<Object[]> defaultParameterizedTestSource(JmespathRuntime<T> runtime, JmespathAbstractRuntime<A> abstractRuntime) {
-        ComplianceTestRunner<T, A> runner = new ComplianceTestRunner<>(runtime, abstractRuntime);
+    public static <T, A> Stream<Object[]> defaultParameterizedTestSource(JmespathRuntime<T> runtime, JmespathAbstractRuntime<A> abstractRuntime, BiPredicate<A, T> instanceTest) {
+        ComplianceTestRunner<T, A> runner = new ComplianceTestRunner<>(runtime, abstractRuntime, instanceTest);
         URL manifest = ComplianceTestRunner.class.getResource(DEFAULT_TEST_CASE_LOCATION + "/MANIFEST");
         try (var reader = new BufferedReader(new InputStreamReader(manifest.openStream(), StandardCharsets.UTF_8))) {
             reader.lines().forEach(line -> {
                 var url = ComplianceTestRunner.class.getResource(DEFAULT_TEST_CASE_LOCATION + "/" + line.trim());
-                runner.testCases.addAll(TestCase.from(url, runtime, abstractRuntime));
+                runner.testCases.addAll(TestCase.from(url, runtime, abstractRuntime, instanceTest));
             });
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -68,9 +69,10 @@ public class ComplianceTestRunner<T, A extends Type> {
         return testCases.stream().map(testCase -> new Object[] {testCase.name(), (Runnable)() -> testCase.abstractRun(abstractRuntime, abstractPredicate)});
     }
 
-    private record TestCase<T, A extends Type>(
+    private record TestCase<T, A>(
             JmespathRuntime<T> runtime,
             JmespathAbstractRuntime<A> abstractRuntime,
+            BiPredicate<A, T> instanceTest,
             String testSuite,
             String comment,
             T given,
@@ -79,7 +81,7 @@ public class ComplianceTestRunner<T, A extends Type> {
             JmespathExceptionType expectedError,
             String benchmark)
             implements Runnable {
-        public static <T, A extends Type> List<TestCase<T, A>> from(URL url, JmespathRuntime<T> runtime, JmespathAbstractRuntime<A> abstractRuntime) {
+        public static <T, A> List<TestCase<T, A>> from(URL url, JmespathRuntime<T> runtime, JmespathAbstractRuntime<A> abstractRuntime, BiPredicate<A, T> instanceTest) {
             var path = url.getPath();
             var testSuiteName = path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.'));
             var testCases = new ArrayList<TestCase<T, A>>();
@@ -108,6 +110,7 @@ public class ComplianceTestRunner<T, A extends Type> {
                     var benchmark = valueAsString(runtime, testCase, BENCH_MEMBER);
                     testCases.add(new TestCase<>(runtime,
                             abstractRuntime,
+                            instanceTest,
                             testSuiteName,
                             comment,
                             given,
@@ -160,9 +163,7 @@ public class ComplianceTestRunner<T, A extends Type> {
                         var abstractedGiven = EvaluationUtils.convert(runtime, given, abstractRuntime);
                         var abstractResult = parsed.evaluate(abstractedGiven, abstractRuntime);
 
-                        if (!abstractResult.isInstance(result, runtime)) {
-                            parsed.evaluate(abstractedGiven, abstractRuntime);
-                            abstractResult.isInstance(result, runtime);
+                        if (!instanceTest.test(abstractResult, result)) {
                             throw new AssertionError("Expected " + result + " to be an instance of " + abstractResult + ".\n"
                                     + "For query: " + expression + "\n");
                         }

@@ -307,7 +307,10 @@ public class AbstractEvaluator<T> implements ExpressionVisitor<T> {
     // TODO: Eliminate the lookup by compiling ahead of time
 
     public T ifThenElse(T condition, T then, T otherwise) {
-        return functions.lookup(runtime, "if").apply(this, condition, then, otherwise);
+        return functions.apply(this, "if", Arrays.asList(
+                runtime.createFunctionArgument(condition),
+                runtime.createFunctionArgument(then),
+                runtime.createFunctionArgument(otherwise)));
     }
 
     public T not(T value) {
@@ -315,14 +318,14 @@ public class AbstractEvaluator<T> implements ExpressionVisitor<T> {
     }
 
     public T add(T left, T right) {
-        return functions.lookup(runtime, "add").apply(this, Arrays.asList(
+        return functions.apply(this, "add",Arrays.asList(
                 runtime.createFunctionArgument(left),
                 runtime.createFunctionArgument(right)
         ));
     }
 
     public T foldLeft(T init, JmespathExpression folder, T collection) {
-        return functions.lookup(runtime, "fold_left").apply(this, Arrays.asList(
+        return functions.apply(this, "fold_left", Arrays.asList(
                 runtime.createFunctionArgument(init),
                 runtime.createFunctionArgument(folder),
                 runtime.createFunctionArgument(collection)

@@ -174,7 +174,7 @@ final class ShapeTyper implements ShapeVisitor<Type> {
 
         return model.getShape(shape.getTarget())
                 .map(target -> target.accept(this))
-                // Rather than fail on broken models during waiter validation,
+                // Rather than fail on broken models,
                 // return an ANY to get *some* validation.
                 .orElse(Type.anyType());
     }

@@ -115,9 +115,9 @@ public abstract class JmespathExpression {
     public <T> JmespathQuery<T> compile(JmespathAbstractRuntime<T> runtime, FunctionRegistry<T> functions) {
         JmespathExpression resolved = resolveRec(runtime, functions);
         if (runtime instanceof JmespathRuntime) {
-            return new JmespathExpressionQuery<>((JmespathRuntime<T>)runtime, resolved);
+            return new JmespathExpressionQuery<>((JmespathRuntime<T>)runtime, functions, resolved);
         } else {
-            return new JmespathAbstractExpressionQuery<>(runtime, resolved);
+            return new JmespathAbstractExpressionQuery<>(runtime, functions, resolved);
         }
     }
 

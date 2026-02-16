@@ -11,8 +11,6 @@ import java.util.Set;
 
 public class ExpressionType extends AbstractType {
 
-    private static final EnumSet<RuntimeType> TYPES = EnumSet.of(RuntimeType.EXPRESSION);
-
     private final JmespathExpression expression;
 
     public ExpressionType(JmespathExpression expression) {

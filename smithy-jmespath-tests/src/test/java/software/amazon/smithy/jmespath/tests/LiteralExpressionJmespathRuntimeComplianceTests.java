@@ -19,7 +19,8 @@ public class LiteralExpressionJmespathRuntimeComplianceTests {
 
     public static Stream<?> source() {
         return ComplianceTestRunner.defaultParameterizedTestSource(
-                LiteralExpressionJmespathRuntime.INSTANCE/*,
-                new TypeJmespathRuntime()*/);
+                LiteralExpressionJmespathRuntime.INSTANCE,
+                new TypeJmespathRuntime(),
+                (t, o) -> t.isInstance(o, LiteralExpressionJmespathRuntime.INSTANCE));
     }
 }

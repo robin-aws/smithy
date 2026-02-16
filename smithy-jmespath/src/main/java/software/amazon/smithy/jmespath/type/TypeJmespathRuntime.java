@@ -165,7 +165,7 @@ public class TypeJmespathRuntime implements JmespathAbstractRuntime<Type> {
 
     @Override
     public Function<Type> resolveFunction(String name) {
-        return overrides.lookup(name);
+        return overrides.get(name);
     }
 
     @Override

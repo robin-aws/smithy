@@ -73,10 +73,12 @@ final class Parser {
             TokenType.LPAREN
     };
 
+    private final JmespathAbstractRuntime<?> runtime;
     private final String expression;
     private final TokenIterator iterator;
 
     private Parser(String expression, JmespathAbstractRuntime<?> runtime) {
+        this.runtime = runtime;
         this.expression = expression;
         iterator = Lexer.tokenize(expression, runtime);
     }

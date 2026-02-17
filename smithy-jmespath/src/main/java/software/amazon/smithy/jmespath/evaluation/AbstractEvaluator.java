@@ -154,31 +154,7 @@ public class AbstractEvaluator<T> implements ExpressionVisitor<T> {
 
     @Override
     public T visitLiteral(LiteralExpression literalExpression) {
-        // TODO: Handle when the literal is already wrapping a T
-        if (literalExpression.isStringValue()) {
-            return runtime.createString(literalExpression.expectStringValue());
-        } else if (literalExpression.isBooleanValue()) {
-            return runtime.createBoolean(literalExpression.expectBooleanValue());
-        } else if (literalExpression.isNumberValue()) {
-            return runtime.createNumber(literalExpression.expectNumberValue());
-        } else if (literalExpression.isArrayValue()) {
-            JmespathRuntime.ArrayBuilder<T> result = runtime.arrayBuilder();
-            for (Object item : literalExpression.expectArrayValue()) {
-                result.add(visit(LiteralExpression.from(item)));
-            }
-            return result.build();
-        } else if (literalExpression.isObjectValue()) {
-            JmespathRuntime.ObjectBuilder<T> result = runtime.objectBuilder();
-            for (Map.Entry<String, Object> entry : literalExpression.expectObjectValue().entrySet()) {
-                T key = runtime.createString(entry.getKey());
-                T value = visit(LiteralExpression.from(entry.getValue()));
-                result.put(key, value);
-            }
-            return result.build();
-        } else if (literalExpression.isNullValue()) {
-            return runtime.createNull();
-        }
-        throw new IllegalArgumentException(String.format("Unrecognized literal: %s", literalExpression));
+        return literalExpression.convert(runtime);
     }
 
     @Override

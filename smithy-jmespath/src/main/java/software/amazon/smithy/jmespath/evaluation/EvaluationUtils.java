@@ -146,7 +146,6 @@ public final class EvaluationUtils {
         }
     }
 
-    // TODO: Use this in visitLiteral instead
     public static <T, R> R convert(JmespathRuntime<T> fromRuntime, T value, JmespathAbstractRuntime<R> toRuntime) {
         RuntimeType type = fromRuntime.typeOf(value);
         switch (type) {

@@ -58,7 +58,7 @@ public abstract class JmespathExpression {
      * @throws JmespathException if the text is invalid.
      */
     public static <T> T parseJson(String text, JmespathAbstractRuntime<T> runtime) {
-        Lexer<T> lexer = new Lexer<T>(text, runtime);
+        Lexer<T> lexer = new Lexer<>(text, runtime);
         return lexer.parseJsonValue();
     }
 

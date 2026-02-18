@@ -236,7 +236,7 @@ public class AbstractEvaluator<T> implements ExpressionVisitor<T> {
         JmespathExpression folder = substitute(
                 LiteralExpression.from("rightExpr"), rightExpr,
                 LiteralExpression.from("condExpr"), condExpr,
-                PROJECTION_FOLDER_TEMPLATE);
+                FILTER_PROJECTION_FOLDER_TEMPLATE);
 
         return ifThenElse(runtime.abstractIs(left, RuntimeType.ARRAY),
                foldLeft(runtime.arrayBuilder().build(), folder, left),

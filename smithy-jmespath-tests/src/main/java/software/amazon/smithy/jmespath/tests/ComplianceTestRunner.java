@@ -140,7 +140,7 @@ public class ComplianceTestRunner<T, A> {
         @Override
         public void run() {
             try {
-                var parsed = JmespathExpression.parse(expression);
+                var parsed = JmespathExpression.parse(expression, runtime);
                 var result = parsed.evaluate(given, runtime);
                 if (benchmark != null) {
                     // Benchmarks don't include expected results or errors

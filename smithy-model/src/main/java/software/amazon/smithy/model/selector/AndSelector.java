@@ -42,15 +42,36 @@ final class AndSelector {
     static final class IntermediateAndSelector implements InternalSelector {
         private final InternalSelector leftSelector;
         private final InternalSelector rightSelector;
+        // Precompute these flags once: the AST is immutable, so recomputing them per push() is wasted work.
+        private final boolean rightInputShapeIndependent;
+        private final boolean inputShapeIndependent;
 
         IntermediateAndSelector(InternalSelector leftSelector, InternalSelector rightSelector) {
             this.leftSelector = leftSelector;
             this.rightSelector = rightSelector;
+            this.rightInputShapeIndependent = rightSelector.isInputShapeIndependent();
+            this.inputShapeIndependent = leftSelector.isInputShapeIndependent() && rightInputShapeIndependent;
         }
 
         @Override
         public Response push(Context ctx, Shape shape, Receiver next) {
+            if (rightInputShapeIndependent) {
+                if (ctx.receivedShapes(shape, leftSelector)) {
+                    return rightSelector.push(ctx, shape, next);
+                }
+                return Response.CONTINUE;
+            }
             return leftSelector.push(ctx, shape, (c, s) -> rightSelector.push(c, s, next));
+        }
+
+        @Override
+        public boolean isInputShapeIndependent() {
+            return inputShapeIndependent;
+        }
+
+        @Override
+        public boolean isOutputSubsetOfInput() {
+            return leftSelector.isOutputSubsetOfInput() && rightSelector.isOutputSubsetOfInput();
         }
 
         @Override

@@ -131,6 +131,26 @@ The following is an example ``smithy-build.json`` configuration:
     the end of the file is considered a comment and ignored when parsing.
 
 
+.. _smithy-build-json-schema:
+
+JSON Schema
+-----------
+
+A `JSON Schema`_ is available for ``smithy-build.json`` that can be used to
+validate configuration files and to enable autocompletion and inline
+documentation in editors that support JSON Schema. To use it, add a
+``$schema`` property to the top of your configuration file:
+
+.. code-block:: json
+
+    {
+        "$schema": "https://smithy.io/2.0/_static/smithy-build-schema.json",
+        "version": "1.0"
+    }
+
+.. _JSON Schema: https://smithy.io/2.0/_static/smithy-build-schema.json
+
+
 .. _plugin-id:
 
 Plugin ID and artifact names
@@ -270,6 +290,9 @@ the following configuration:
     * - Property
       - Type
       - Description
+    * - id
+      - ``string``
+      - An optional identifier for the repository.
     * - url
       - ``string``
       - The URL of the repository (for example, ``https://repo.maven.apache.org/maven2``).
@@ -654,6 +677,39 @@ Only the following shape type changes are supported:
 
 .. seealso:: :ref:`changeStringEnumsToEnumShapes`
 
+.. _compileBdd-transform:
+
+compileBdd
+-----------------------------
+
+This transform compiles `Binary Decision Diagram (BDD) <https://en.wikipedia.org/wiki/Binary_decision_diagram>`_
+from service shape's :ref:`@endpointRuleSet <smithy.rules#endpointRuleSet-trait>` trait and attaches
+the compiled :ref:`@endpointBdd <smithy.rules#endpointBdd-trait>` trait to the service shape.
+
+.. code-block:: json
+
+    {
+        "version": "1.0",
+        "projections": {
+            "exampleProjection": {
+                "transforms": [
+                    {
+                        "name": "compileBdd"
+                    }
+                ]
+            }
+        },
+        "maven": {
+            "dependencies": [
+                "software.amazon.smithy:smithy-rules-engine:__smithy_version__"
+            ]
+        }
+    }
+
+.. note::
+    AWS services like ``S3`` can have special tree transformations that dramatically improve the BDD compiled result
+    both in size and performance. To use them, please use the dedicated transform ``compileBddForAws`` and
+    include the dependency of ``software.amazon.smithy:smithy-aws-endpoints:__smithy_version__``.
 
 .. _excludeShapesBySelector-transform:
 
@@ -940,6 +996,53 @@ shape IDs.
             }
         }
     }
+
+
+.. _includeClosures-transform:
+
+includeClosures
+---------------
+
+Filters the model down to the shapes in one or more
+:ref:`shape closures <shape-closures>`. Closures are defined in the model
+with the :ref:`shapeClosures <shapeClosures-metadata>` metadata key.
+
+.. list-table::
+    :header-rows: 1
+    :widths: 10 20 70
+
+    * - Property
+      - Type
+      - Description
+    * - closures
+      - ``[string]``
+      - **Required**. The ids of the closures to include in the model.
+        Each id MUST refer to a closure declared in the model's
+        :ref:`shapeClosures <shapeClosures-metadata>` metadata.
+
+.. code-block:: json
+
+    {
+        "version": "1.0",
+        "projections": {
+            "exampleProjection": {
+                "transforms": [
+                    {
+                        "name": "includeClosures",
+                        "args": {
+                            "closures": ["com.example#EventShapes"]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+.. note::
+
+    This transformer does not remove shapes from the prelude and does not apply
+    renames. Renames may be applied by using the
+    :ref:`flattenClosureNamespaces <flattenClosureNamespaces>` transformer.
 
 
 .. _excludeTags-transform:
@@ -1593,6 +1696,51 @@ long as they don't conflict with a shape within the
                             "namespace": "ns.foo",
                             "service": "ns.bar#MyService",
                             "includeTagged": ["baz", "qux"]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+
+.. _flattenClosureNamespaces:
+
+flattenClosureNamespaces
+------------------------
+
+Flattens namespaces of any shapes in a :ref:`shape closure <shape-closures>`
+into a target namespace, applying any renames declared by the closure. Shapes
+outside the closure are left untouched.
+
+.. list-table::
+    :header-rows: 1
+    :widths: 10 20 70
+
+    * - Property
+      - Type
+      - Description
+    * - namespace
+      - ``string``
+      - **REQUIRED** The target namespace.
+    * - closure
+      - ``string``
+      - **REQUIRED** The id of the closure to flatten. The id MUST refer to
+        a closure declared in the model's
+        :ref:`shapeClosures <shapeClosures-metadata>` metadata.
+
+.. code-block:: json
+
+    {
+        "version": "1.0",
+        "projections": {
+            "exampleProjection": {
+                "transforms": [
+                    {
+                        "name": "flattenClosureNamespaces",
+                        "args": {
+                            "namespace": "com.example.events",
+                            "closure": "com.example#EventShapes"
                         }
                     }
                 ]

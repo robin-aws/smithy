@@ -22,10 +22,22 @@ description = "This module implements the Smithy command line interface."
 extra["displayName"] = "Smithy :: CLI"
 extra["moduleName"] = "software.amazon.smithy.cli"
 
+configurePublishing {
+    customComponent = components["shadow"]
+}
+
 val imageJreVersion = "17"
 val correttoRoot = "https://corretto.aws/downloads/latest/amazon-corretto-$imageJreVersion"
 
 dependencies {
+    constraints {
+        implementation("org.codehaus.plexus:plexus-utils:3.6.1") {
+            because(
+                "CVE-2025-67030: directory traversal in Expand.extractFile (CVSS 8.8), fixed in 3.6.1 via https://github.com/codehaus-plexus/plexus-utils/pull/304",
+            )
+        }
+    }
+
     // Keeps these as exported transitive dependencies.
     implementation(project(":smithy-model"))
     implementation(project(":smithy-build"))
@@ -46,7 +58,8 @@ dependencies {
     implementation(libs.maven.resolver.impl)
     implementation(libs.maven.resolver.connector.basic)
     implementation(libs.maven.resolver.transport.file)
-    implementation(libs.maven.resolver.transport.http)
+    implementation(libs.maven.resolver.transport.apache)
+    implementation(libs.maven.resolver.supplier)
     implementation(libs.slf4j.jul) // Route slf4j used by Maven through JUL like the rest of Smithy.
 
     testImplementation(libs.mockserver)
@@ -185,6 +198,16 @@ tasks {
 
         mergeServiceFiles()
 
+        // Maven Resolver ships Sisu component indexes under META-INF/sisu. Merge them like service files so
+        // the class names they list are relocated alongside the relocated bytecode. Otherwise the index points
+        // at the original org.apache.maven.* names that no longer exist in the shaded jar.
+        //
+        // Strictly speaking, we don't *need* to do this. The CLI will probably work just fine without doing
+        // this. But it's a build time thing that doesn't take long and makes the output more technically correct.
+        mergeServiceFiles {
+            path = "META-INF/sisu"
+        }
+
         // Shade dependencies to prevent conflicts with other dependencies.
         relocate("org.slf4j", "software.amazon.smithy.cli.shaded.slf4j")
         relocate("org.eclipse", "software.amazon.smithy.cli.shaded.eclipse")
@@ -287,6 +310,7 @@ tasks {
     val checksumImages by registering(Checksum::class) {
         dependsOn(runtimeZip)
         checksumAlgorithm = Checksum.Algorithm.SHA256
+        appendFileNameToChecksum.set(true)
         outputDirectory = runtime.imageDir
         inputFiles.setFrom(imageZips)
     }

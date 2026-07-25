@@ -50,7 +50,9 @@ final class CloudFormationSubstitution implements ApiGatewayMapper {
             "components/securitySchemes/*/x-amazon-apigateway-authorizer/authorizerUri",
             "paths/*/*/x-amazon-apigateway-integration/connectionId",
             "paths/*/*/x-amazon-apigateway-integration/credentials",
-            "paths/*/*/x-amazon-apigateway-integration/uri");
+            "paths/*/*/x-amazon-apigateway-integration/uri",
+            "paths/*/*/x-amazon-apigateway-integration/integrationTarget",
+            "x-amazon-apigateway-endpoint-configuration/vpcEndpointIds/*");
 
     @Override
     public List<ApiGatewayConfig.ApiType> getApiTypes() {

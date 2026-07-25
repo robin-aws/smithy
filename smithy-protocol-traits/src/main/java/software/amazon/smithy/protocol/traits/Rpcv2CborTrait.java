@@ -4,30 +4,17 @@
  */
 package software.amazon.smithy.protocol.traits;
 
-import java.util.ArrayList;
-import java.util.List;
 import software.amazon.smithy.model.node.Node;
-import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.traits.AbstractTrait;
-import software.amazon.smithy.model.traits.AbstractTraitBuilder;
-import software.amazon.smithy.utils.ListUtils;
 import software.amazon.smithy.utils.ToSmithyBuilder;
 
-public final class Rpcv2CborTrait extends AbstractTrait implements ToSmithyBuilder<Rpcv2CborTrait> {
+public final class Rpcv2CborTrait extends Rpcv2ProtocolTrait implements ToSmithyBuilder<Rpcv2CborTrait> {
 
     public static final ShapeId ID = ShapeId.from("smithy.protocols#rpcv2Cbor");
 
-    private static final String HTTP = "http";
-    private static final String EVENT_STREAM_HTTP = "eventStreamHttp";
-
-    private final List<String> http;
-    private final List<String> eventStreamHttp;
-
     private Rpcv2CborTrait(Builder builder) {
-        super(ID, builder.getSourceLocation());
-        http = ListUtils.copyOf(builder.http);
-        eventStreamHttp = ListUtils.copyOf(builder.eventStreamHttp);
+        super(ID, builder);
     }
 
     /**
@@ -38,94 +25,30 @@ public final class Rpcv2CborTrait extends AbstractTrait implements ToSmithyBuild
     }
 
     /**
-     * Updates the builder from a Node.
+     * Creates the trait from a Node.
      *
      * @param node Node object that must be a valid {@code ObjectNode}.
-     * @return Returns the updated builder.
+     * @return Returns the created trait.
      */
     public static Rpcv2CborTrait fromNode(Node node) {
-        Builder builder = builder().sourceLocation(node);
-        ObjectNode objectNode = node.expectObjectNode();
-        objectNode.getArrayMember(HTTP)
-                .map(values -> Node.loadArrayOfString(HTTP, values))
-                .ifPresent(builder::http);
-        objectNode.getArrayMember(EVENT_STREAM_HTTP)
-                .map(values -> Node.loadArrayOfString(EVENT_STREAM_HTTP, values))
-                .ifPresent(builder::eventStreamHttp);
-        return builder.build();
-    }
-
-    /**
-     * Gets the priority ordered list of supported HTTP protocol versions.
-     *
-     * @return Returns the supported HTTP protocol versions.
-     */
-    public List<String> getHttp() {
-        return http;
-    }
-
-    /**
-     * Gets the priority ordered list of supported HTTP protocol versions that are required when
-     * using event streams.
-     *
-     * @return Returns the supported event stream HTTP protocol versions.
-     */
-    public List<String> getEventStreamHttp() {
-        return eventStreamHttp;
-    }
-
-    @Override
-    protected Node createNode() {
-        ObjectNode.Builder builder = Node.objectNodeBuilder().sourceLocation(getSourceLocation());
-        if (!getHttp().isEmpty()) {
-            builder.withMember(HTTP, Node.fromStrings(getHttp()));
-        }
-        if (!getEventStreamHttp().isEmpty()) {
-            builder.withMember(EVENT_STREAM_HTTP, Node.fromStrings(getEventStreamHttp()));
-        }
-        return builder.build();
+        return builder().fromNode(node).build();
     }
 
     @Override
     public Builder toBuilder() {
-        return builder().http(http).eventStreamHttp(eventStreamHttp);
+        return builder()
+                .http(getHttp())
+                .eventStreamHttp(getEventStreamHttp());
     }
 
     /**
      * Builder for creating a {@code Rpcv2CborTrait}.
      */
-    public static final class Builder extends AbstractTraitBuilder<Rpcv2CborTrait, Builder> {
-
-        private final List<String> http = new ArrayList<>();
-        private final List<String> eventStreamHttp = new ArrayList<>();
+    public static final class Builder extends Rpcv2ProtocolTrait.Builder<Rpcv2CborTrait, Builder> {
 
         @Override
         public Rpcv2CborTrait build() {
             return new Rpcv2CborTrait(this);
-        }
-
-        /**
-         * Sets the list of supported HTTP protocols.
-         *
-         * @param http HTTP protocols to set and replace.
-         * @return Returns the builder.
-         */
-        public Builder http(List<String> http) {
-            this.http.clear();
-            this.http.addAll(http);
-            return this;
-        }
-
-        /**
-         * Sets the list of supported event stream HTTP protocols.
-         *
-         * @param eventStreamHttp Event stream HTTP protocols to set and replace.
-         * @return Returns the builder.
-         */
-        public Builder eventStreamHttp(List<String> eventStreamHttp) {
-            this.eventStreamHttp.clear();
-            this.eventStreamHttp.addAll(eventStreamHttp);
-            return this;
         }
     }
 

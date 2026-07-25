@@ -391,6 +391,9 @@ structure EventStreamTestCase {
     /// testing edge cases of clients and servers that are impossible or
     /// undesirable to test in *both* client and server implementations.
     appliesTo: AppliesTo
+
+    /// Applies a list of tags to the test.
+    tags: NonEmptyStringList
 }
 
 /// A structure defining http request shapes for initial requests.
@@ -514,11 +517,17 @@ union EventHeaderValue {
     /// Byte headers MUST be written in the model as base64-encoded
     /// strings, e.g. `Zm9v` represents utf8 `foo`.
     byte: Byte
+
     short: Short
+
     integer: Integer
+
     long: Long
+
     blob: Blob
+
     string: String
+
     timestamp: Timestamp
 }
 

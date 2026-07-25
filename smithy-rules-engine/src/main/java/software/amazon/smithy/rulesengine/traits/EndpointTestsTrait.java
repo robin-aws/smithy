@@ -5,8 +5,9 @@
 package software.amazon.smithy.rulesengine.traits;
 
 import java.util.List;
+import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.Node;
-import software.amazon.smithy.model.node.NodeMapper;
+import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.traits.AbstractTrait;
 import software.amazon.smithy.model.traits.AbstractTraitBuilder;
@@ -31,18 +32,6 @@ public final class EndpointTestsTrait extends AbstractTrait implements ToSmithyB
         this.testCases = builder.testCases.copy();
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static EndpointTestsTrait fromNode(Node node) {
-        NodeMapper mapper = new NodeMapper();
-        mapper.disableFromNodeForClass(EndpointTestsTrait.class);
-        EndpointTestsTrait trait = mapper.deserialize(node, EndpointTestsTrait.class);
-        trait.setNodeCache(node);
-        return trait;
-    }
-
     public String getVersion() {
         return version;
     }
@@ -53,18 +42,20 @@ public final class EndpointTestsTrait extends AbstractTrait implements ToSmithyB
 
     @Override
     protected Node createNode() {
-        NodeMapper mapper = new NodeMapper();
-        mapper.setOmitEmptyValues(true);
-        mapper.disableToNodeForClass(EndpointTestsTrait.class);
-        return mapper.serialize(this);
+        ArrayNode.Builder builder = ArrayNode.builder();
+        for (EndpointTestCase testCase : testCases) {
+            builder.withValue(testCase.toNode());
+        }
+        return Node.objectNodeBuilder()
+                .sourceLocation(getSourceLocation())
+                .withMember("testCases", builder.build())
+                .withMember("version", Node.from(version))
+                .build();
     }
 
     @Override
     public Builder toBuilder() {
-        return builder()
-                .sourceLocation(getSourceLocation())
-                .version(version)
-                .testCases(testCases);
+        return new Builder(this);
     }
 
     public static final class Provider extends AbstractTrait.Provider {
@@ -78,11 +69,31 @@ public final class EndpointTestsTrait extends AbstractTrait implements ToSmithyB
         }
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static EndpointTestsTrait fromNode(Node node) {
+        ObjectNode obj = node.expectObjectNode();
+        Builder builder = builder().sourceLocation(node);
+        obj.expectStringMember("version", builder::version);
+        obj.expectArrayMember("testCases", EndpointTestCase::fromNode, builder::testCases);
+        EndpointTestsTrait trait = builder.build();
+        trait.setNodeCache(node);
+        return trait;
+    }
+
     public static final class Builder extends AbstractTraitBuilder<EndpointTestsTrait, Builder> {
         private final BuilderRef<List<EndpointTestCase>> testCases = BuilderRef.forList();
         private String version;
 
         private Builder() {}
+
+        private Builder(EndpointTestsTrait trait) {
+            sourceLocation(trait.getSourceLocation());
+            this.version = trait.version;
+            this.testCases.setBorrowed(trait.testCases);
+        }
 
         public Builder version(String version) {
             this.version = version;

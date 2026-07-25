@@ -1,5 +1,332 @@
 # Smithy Changelog
 
+## 1.72.1 (2026-07-13)
+
+### Bug Fixes
+
+- Fixed trait code generation for maps with an `@idRef` key, which produced
+  uncompilable code. The generated `createNode()` and `fromNode()` methods
+  hard-coded the map entry key type as `String` instead of deriving it from the
+  key shape, which is a `ShapeId` for an `@idRef` key.
+  ([#3207](https://github.com/smithy-lang/smithy/pull/3207))
+- Reordered the in the rules-engine traits members to match what NodeMapper
+  outputs to avoid spurious diff changes
+  (https://github.com/smithy-lang/smithy/pull/3210)
+
+## 1.72.0 (2026-07-01)
+
+### Features
+
+- Optimized model loading by ~50% by fixing a path traversal bug, reducing JSON
+  allocations, reducing ShapeID string allocations, improving ShapeId and Model
+  blackboard caches, optimizing selectors based on relevance, and skipping
+  construction of suppressed unresolved-trait validation events.
+  ([#3176](https://github.com/smithy-lang/smithy/pull/3176))
+- Added a new `metadata` trait that allows model authors to declare types for
+  metadata keys that will be automatically validated when building models.
+  ([#3078](https://github.com/smithy-lang/smithy/pull/3078))
+- Added an optional `message` property to waiter acceptors that allows
+  extracting a human-readable message from the operation output via a JMESPath
+  expression. The expression must resolve to a string or array of strings and is
+  only valid on failure state acceptors.
+  ([#3151](https://github.com/smithy-lang/smithy/pull/3151))
+- Added a `shapeClosures` metadata key that allows users to define closures of
+  shapes that are not necessarily rooted in a service shape. This is primarily
+  motivated by the desire to code-generate types without service or client
+  framing, but is left open enough to be used for other purposes.
+  ([#3148](https://github.com/smithy-lang/smithy/pull/3148))
+- Optimized selector parsing
+  ([#3175](https://github.com/smithy-lang/smithy/pull/3175))
+- Added a `generateDataShapesOnly` mode to `CodegenDirector` that generates only
+  data shapes (skipping service, resource, and operation shapes).
+  ([#3156](https://github.com/smithy-lang/smithy/pull/3156))
+- Added validation to ensure every operation binds all required rules engine
+  parameters, emitting a `RuleSetParameter.Operation.RequiredMissing` error.
+  ([#3153](https://github.com/smithy-lang/smithy/pull/3153))
+- Updated tags member names validation in input/output structures to allow "map"
+  suffix variants. ([#3129](https://github.com/smithy-lang/smithy/pull/3129))
+- Added `SmithyBuildConfig#toModelAssembler` and `SmithyBuild#toProjectedModel`
+  APIs to load and project a model directly from a build config.
+  ([#3135](https://github.com/smithy-lang/smithy/pull/3135))
+- The `smithy format` CLI command now falls back to the `sources` defined in
+  `smithy-build.json` when no positional arguments are provided, allowing it to
+  be run with no arguments inside a configured Smithy project.
+  ([#3143](https://github.com/smithy-lang/smithy/pull/3143))
+- Added test cases for errors in AWS JSON protocols using different namespaces
+  ([#3157](https://github.com/smithy-lang/smithy/pull/3157))
+- Added a `--check` option to the `smithy format` command that fails when any
+  file would be modified.
+  ([#3141](https://github.com/smithy-lang/smithy/pull/3141))
+- Added the ability to drive directed code generation from a metadata-defined
+  shape closure instead of a service.
+  ([#3156](https://github.com/smithy-lang/smithy/pull/3156))
+- Optimized selectors ([#3171](https://github.com/smithy-lang/smithy/pull/3171))
+- Improved model loading performance by replacing NodeMapper with direct Node
+  API calls in rules-engine traits and eliminating unnecessary trait map copies
+  during shape construction.
+  ([#3185](https://github.com/smithy-lang/smithy/pull/3185))
+- Added support for services to declare non-default operation names (e.g.,
+  AddTagsToResource) for tagging operations at the service level in the
+  `tagEnabled` trait. Tag API discovery and validation honor the override before
+  falling back to default-named operations.
+  ([#3130](https://github.com/smithy-lang/smithy/pull/3130))
+
+### Bug Fixes
+
+- Fixed an exponential search space growth in
+  MemberShouldReferenceResourceValidator
+  ([#3149](https://github.com/smithy-lang/smithy/pull/3149))
+- Fixed several formatter bugs that mishandled docs and comments around member
+  value assignments and shape boundaries.
+  ([#3132](https://github.com/smithy-lang/smithy/pull/3132))
+- Adds a warning when using the private trait on a mixin member, clarifying that
+  it does not prevent the member from being inherited or modified by inheritors.
+  ([#3139](https://github.com/smithy-lang/smithy/pull/3139))
+- Fixes a formatter bug where some trait/node values weren't spread across
+  multiple lines ([#3140](https://github.com/smithy-lang/smithy/pull/3140))
+- Adds a validation event for when a private resource shape is referenced
+  outside of its namespace using the resource target elision syntax.
+  ([#3139](https://github.com/smithy-lang/smithy/pull/3139))
+- Added a new getter for generated union trait values with a covariant return
+  type to address the issue of the old getters erasing value types. The old
+  getters are still around by default, but are deprecated. They may be omitted
+  entirely via a plugin setting.
+  ([#3196](https://github.com/smithy-lang/smithy/pull/3196))
+- Added missing EnumShape hasTrait override.
+  ([#3183](https://github.com/smithy-lang/smithy/pull/3183))
+- Fixed a bug where comments trailing unused imports were being improperly
+  removed during formatting.
+  ([#3152](https://github.com/smithy-lang/smithy/pull/3152))
+- Fixed the `AddedRequiredMember` diff evaluator so that it no longer flags new
+  members marked with the `@clientOptional` trait, which is the sanctioned way
+  to add a `@required` member without breaking generated client code.
+  ([#3166](https://github.com/smithy-lang/smithy/pull/3166))
+
+### Documentation
+
+- Updated resource docs to recommend against using the literal `id` as a
+  resource name, since it can cause confusion in child resources.
+  ([#3198](https://github.com/smithy-lang/smithy/pull/3198))
+
+### Other
+
+- Formatted all smithy source files and added a formatting task to ensure they
+  stay up to date. ([#3142](https://github.com/smithy-lang/smithy/pull/3142))
+- Upgraded maven-resolver to 2.x. This is a transparent change to smithy-cli
+  users, including those who supply their own dependency resolver
+  implementation. ([#3194](https://github.com/smithy-lang/smithy/pull/3194))
+
+## 1.71.0 (2026-05-14)
+
+### Features
+
+- Added `aws.apigateway#resourcePolicy` trait and OpenAPI mapper
+  ([#3081](https://github.com/smithy-lang/smithy/pull/3081))
+- Added `aws.apigateway#minimumCompressionSize` trait and OpenAPI mapper
+  ([#3076](https://github.com/smithy-lang/smithy/pull/3076))
+- Added `aws.apigateway#gatewayResponses` trait and OpenAPI mapper with DANGER
+  validation for CORS conflicts
+  ([#3089](https://github.com/smithy-lang/smithy/pull/3089))
+- Added `aws.auth#cognitoUserPoolsScopes` trait for specifying OAuth scopes on
+  operations that use an Amazon Cognito User Pools authorizer.
+  ([#3109](https://github.com/smithy-lang/smithy/pull/3109))
+- Added `aws.apigateway#apiTlsPolicy` trait and OpenAPI mapper
+  ([#3083](https://github.com/smithy-lang/smithy/pull/3083))
+- Added `tlsConfig`, `responseTransferMode`, and `integrationTarget` sub-fields
+  to the `aws.apigateway#integration` trait
+  ([#3090](https://github.com/smithy-lang/smithy/pull/3090))
+- Added copy-on-write optimization for `toBuilder()` via
+  `BuilderRef.setBorrowed`
+  ([#3107](https://github.com/smithy-lang/smithy/pull/3107))
+- Fixed trait codegen to generate more specific return type for trait provider
+  ([#3087](https://github.com/smithy-lang/smithy/pull/3087))
+- Added `aws.apigateway#apiKeyRequired` trait and OpenAPI mapper
+  ([#3091](https://github.com/smithy-lang/smithy/pull/3091))
+- Added `aws.apigateway#endpointConfiguration` trait
+  ([#3088](https://github.com/smithy-lang/smithy/pull/3088))
+- Added `ipAddressType` field to the `aws.apigateway#endpointConfiguration`
+  trait and added an OpenAPI mapper that writes `vpcEndpointIds` and
+  `disableExecuteApiEndpoint` to the
+  `x-amazon-apigateway-endpoint-configuration` extension.
+  ([#3110](https://github.com/smithy-lang/smithy/pull/3110))
+- Optimized model scoping in JsonSchemaConverter by constructing through a
+  Model.Builder instead of filtering shapes.
+  ([#3111](https://github.com/smithy-lang/smithy/pull/3111))
+- Added a new protocol test for query operations with no output that can include
+  `ResponseMetadata`. No assertions are done but protocol test runners should be
+  able to handle the metadata without choking.
+  ([#3106](https://github.com/smithy-lang/smithy/pull/3106))
+
+### Bug Fixes
+
+- Fixed an issue where traits would lose their types, reverting to DynamicTrait,
+  when renaming shapes
+  ([#3086](https://github.com/smithy-lang/smithy/pull/3086))
+- Fixed selector parsing to properly handle extraneous BREAK_TOKENS (',', '\]',
+  ')') in a selector. This manifested in silently dropping contents in the comma
+  case ("structure, string" was effectively just "structure"). For the closing
+  brace/paren, the characters were silently ignored as seen in the additional
+  fixed tests. ([#3063](https://github.com/smithy-lang/smithy/pull/3063))
+- Fixed event stream test params encoding blobs in b64.
+  ([#3121](https://github.com/smithy-lang/smithy/pull/3121))
+- Fixed a bug in OpenAPI conversions where onErrorStatusConflict from
+  mappers/protocols wasn't being respected.
+  ([#3123](https://github.com/smithy-lang/smithy/pull/3123))
+- Fixed a Windows user PATH corruption in install.bat caused by setx silently
+  truncating values over 1024 characters
+  ([#3117](https://github.com/smithy-lang/smithy/pull/3117))
+- Fixed an issue where jsonName wasn't applied to examples in OpenAPI for
+  restJson1 ([#3108](https://github.com/smithy-lang/smithy/pull/3108))
+- Fixed trait-codegen failure when string literals contain dollar signs
+  ([#3096](https://github.com/smithy-lang/smithy/pull/3096))
+
+### Documentation
+
+- Fixed stale and mismatched AWS API Gateway reference link targets
+  ([#3077](https://github.com/smithy-lang/smithy/pull/3077))
+
+## 1.70.0 (2026-04-30)
+
+### Features
+
+- Add JSON Schema for smithy-build.json
+  ([#3062](https://github.com/smithy-lang/smithy/pull/3062))
+
+- Added three new shape type selectors
+
+  - `aggregateType` selects lists, structures, unions, and maps.
+  - `serviceType` selects services, resources, and operations.
+  - `dataType` selects aggregate types and simple types.
+    ([#3070](https://github.com/smithy-lang/smithy/pull/3070))
+
+- Adds a Bill of Materials (BOM) for all Smithy packagees
+  ([#3056](https://github.com/smithy-lang/smithy/pull/3056))
+
+- Add support for custom comparators for sorting IDL serialization output
+  ([#3058](https://github.com/smithy-lang/smithy/pull/3058))
+
+- Ignore JARs without a Smithy manifest to allow Smithy model packages to have
+  non-Smithy dependencies
+  ([#3055](https://github.com/smithy-lang/smithy/pull/3055))
+
+### Bug Fixes
+
+- Fix init failure on corrupted template cache
+  ([#3051](https://github.com/smithy-lang/smithy/pull/3051))
+- Fix CLI dependency cache for multiple configs building to the same directory
+  ([#3061](https://github.com/smithy-lang/smithy/pull/3061))
+- Fix trait/validator loading with discoverModels
+  ([#3049](https://github.com/smithy-lang/smithy/pull/3049))
+- Optimize chained :root selector evaluation by updating IntermediateAndSelector
+  to only push to input-independent selectors one time
+  ([#3054](https://github.com/smithy-lang/smithy/pull/3054))
+- Fix minor issues logged during builds
+  ([#3050](https://github.com/smithy-lang/smithy/pull/3050))
+- Fixed a bug in the formatter that was removing newlines escapes
+  ([#3068](https://github.com/smithy-lang/smithy/pull/3068))
+
+### Documentation
+
+- Updated the example retry strategy in client guidance and updated the initial
+  token method to take information about the operation.
+  ([#3000](https://github.com/smithy-lang/smithy/pull/3000))
+- Added docs for the endpointTests trait.
+  ([#3048](https://github.com/smithy-lang/smithy/pull/3048))
+
+### Other
+
+- Fixed some errors in event stream protocol tests.
+  ([#3069](https://github.com/smithy-lang/smithy/pull/3069))
+- Run container as non-root user
+  ([#2934](https://github.com/smithy-lang/smithy/pull/2934))
+- Ensures javadoc uses UTF-8 encoding
+  ([#3057](https://github.com/smithy-lang/smithy/pull/3057))
+
+## 1.69.0 (2026-04-08)
+
+### Features
+
+- Added the `smithy.api#longPoll` trait to indicate an operation is a long-poll
+  operation. ([#3019](https://github.com/smithy-lang/smithy/pull/3019))
+- Added `aws.api#awsChunked` trait.
+  ([#3033](https://github.com/smithy-lang/smithy/pull/3033))
+- Added BDD auto generatrion in rules-engine-tests.
+  ([#3027](https://github.com/smithy-lang/smithy/pull/3027))
+- Added multi-origin support to the CORS trait.
+  ([#3035](https://github.com/smithy-lang/smithy/pull/3035))
+- Updated IDL serializer to quote unresolvable idRef values.
+  ([#3038](https://github.com/smithy-lang/smithy/pull/3038))
+- Added llms.txt generation to docs build.
+  ([#3010](https://github.com/smithy-lang/smithy/pull/3010))
+- Fixed issues handling high-precision numbers when loading models.
+  ([#3004](https://github.com/smithy-lang/smithy/pull/3004))
+- Relaxed the optionality constraint on pagination output tokens to report a
+  DANGER when the output token is required instead of ERROR.
+  ([#2983](https://github.com/smithy-lang/smithy/pull/2983))
+- Added node reversal optimization to `compileBdd`.
+  ([#3045](https://github.com/smithy-lang/smithy/pull/3045))
+
+### Bug Fixes
+
+- Fixed CLI checksum verification by adding `appendFileNameToChecksum` to
+  generate `sha256sum -c` compatible checksum files. Previously, the `.sha256`
+  files contained only the raw hash without a filename, causing verification to
+  fail. ([#2999](https://github.com/smithy-lang/smithy/pull/2999))
+
+### Documentation
+
+- Fixed `aws.api#service` docs to use correct property name cloudWatchNamespace
+  instead of cloudWatchMetricNamespace. Also corrected a typo in
+  CONTRIBUTING.md. ([#3008](https://github.com/smithy-lang/smithy/pull/3008))
+- Corrected outdated Smithy-Java documentation.
+  ([#3009](https://github.com/smithy-lang/smithy/pull/3009))
+
+### Other
+
+- Added ec2QueryName, xmlName distinction edge test cases.
+  ([#2993](https://github.com/smithy-lang/smithy/pull/2993))
+
+## 1.68.0 (2026-02-25)
+
+### Features
+
+- Added new ERROR event to EndpointTestsTraitValidator when builtin params are
+  inconsistent ([#2955](https://github.com/smithy-lang/smithy/pull/2955))
+- Update smithy-rules-engine-tests with new std lib functions and bdd-based
+  tests ([#2945](https://github.com/smithy-lang/smithy/pull/2945))
+- Add new transform compileBdd and compileBddForAws
+  ([#2953](https://github.com/smithy-lang/smithy/pull/2953))
+- Added the `@smithy.contracts#conditions` trait, available in the new
+  `smithy-contract-traits` package. This trait defines restrictions on shape
+  values using JMESPath expressions.
+  ([#2935](https://github.com/smithy-lang/smithy/pull/2935))
+- Added a tags property to eventStreamTests to allow filtering individual cases
+  in the same way that http protocol tests can be.
+  ([#2973](https://github.com/smithy-lang/smithy/pull/2973))
+- Added a service provider interface for `NodeValidationVisitor` plugins, and
+  optimized to index plugins by the `ShapeType` they apply to.
+  ([#2935](https://github.com/smithy-lang/smithy/pull/2935))
+
+### Documentation
+
+- Tweak wording of integers with ranges message
+  ([#2971](https://github.com/smithy-lang/smithy/pull/2971))
+- Added Smithy Kotlin Quickstart and Client User Guide sections.
+  ([#2944](https://github.com/smithy-lang/smithy/pull/2944))
+- Added documentation for eventStreamTests
+  ([#2973](https://github.com/smithy-lang/smithy/pull/2973))
+- Add client guidance for context types.
+  ([#2924](https://github.com/smithy-lang/smithy/pull/2924))
+- Added client guidance documentation for endpoint resolution.
+  ([#2941](https://github.com/smithy-lang/smithy/pull/2941))
+
+### Other
+
+- Removed protocol tests for skipping null values in dense collections. This
+  behavior can silently drop data. SDKs that cannot preserve null values should
+  raise an exception instead
+  ([#2972](https://github.com/smithy-lang/smithy/pull/2972))
+
 ## 1.67.0 (2026-01-28)
 
 ### Features

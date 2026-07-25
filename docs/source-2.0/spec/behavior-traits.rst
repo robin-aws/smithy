@@ -73,9 +73,44 @@ Summary
 Trait selector
     ``operation``
 Value type
-    Annotation trait
+    ``structure``
 Conflicts with
     :ref:`readonly-trait`
+
+The ``idempotent`` trait is a structure that supports the following optional
+members:
+
+.. list-table::
+    :header-rows: 1
+    :widths: 10 10 80
+
+    * - Property
+      - Type
+      - Description
+    * - exists
+      - ``[string]``
+      - Describes the errors returned when the operation is called and the
+        resource already exists. Each entry is a shape ID that MUST reference
+        a shape with the :ref:`error-trait` that is also in the operation's
+        ``errors`` list. An empty list indicates the operation returns a
+        successful response. When omitted, the behavior is unspecified.
+    * - notFound
+      - ``[string]``
+      - Describes the errors returned when the operation is called and the
+        resource does not exist. Each entry is a shape ID that MUST reference
+        a shape with the :ref:`error-trait` that is also in the operation's
+        ``errors`` list. An empty list indicates the operation returns a
+        successful response. When omitted, the behavior is unspecified.
+
+.. note::
+    Only operation-level errors can be used in the ``exists`` and ``notFound``
+    properties. Common errors defined in the service shape are not permitted.
+
+The ``exists`` and ``notFound`` properties are mutually exclusive; only one
+may be specified on a given operation.
+
+When applied without any properties, the trait indicates idempotency without
+specifying the response behavior for unexpected resource states.
 
 .. code-block:: smithy
 
@@ -85,10 +120,93 @@ Conflicts with
         output: DeleteSomethingOutput
     }
 
+The following example uses ``exists`` to indicate that a create operation
+returns a ``ConflictException`` when the resource already exists:
+
+.. code-block:: smithy
+
+    @idempotent(exists: [ConflictException])
+    operation CreateSomething {
+        input: CreateSomethingInput
+        output: CreateSomethingOutput
+        errors: [ConflictException]
+    }
+
+The following example uses ``notFound`` with an empty list to indicate that
+a delete operation returns a successful response when the resource does not
+exist:
+
+.. code-block:: smithy
+
+    @idempotent(notFound: [])
+    operation DeleteSomething {
+        input: DeleteSomethingInput
+        output: DeleteSomethingOutput
+    }
+
 .. note::
 
     All operations that are marked as :ref:`readonly-trait` are inherently
     idempotent.
+
+
+.. smithy-trait:: smithy.api#longPoll
+.. _longPoll-trait:
+
+``longPoll`` trait
+------------------
+
+Summary
+    Indicates that the service may not respond immediately to requests for the
+    targeted operation. This can allow services more time to prepare more
+    detailed responses or allow them to hold the request open as it waits for
+    information to become available.
+Trait selector
+    ``operation``
+Value type
+    ``structure``
+
+.. warning::
+    This trait is unstable and MAY change in the future.
+
+When making requests for an operation targeted by this trait, clients should
+wait for at least the amount of time indicated by the ``timeoutMillis`` member.
+If the client's default timeout is longer, it may use the longer value.
+
+Clients may allow users to configure timeouts. If a user configures a timeout
+value on a client, the client must use the user-configured value regardless of
+whether it is greater or less than timeoutMillis. Similarly, if the user
+configures a timeout value for a request, clients must use that value.
+
+The ``longPoll`` trait is a structure that contains the following members:
+
+.. list-table::
+    :header-rows: 1
+    :widths: 10 10 80
+
+    * - Property
+      - Type
+      - Description
+    * - timeoutMillis
+      - ``integer``
+      - **Required**. The amount of time in milliseconds that a client should
+        wait for a response. This must be greater than 0.
+
+.. code-block:: smithy
+
+    @longPoll
+    operation WaitForUpdate {
+        input: WaitForUpdateInput
+        output: WaitForUpdateOutput
+    }
+
+.. code-block:: smithy
+
+    @longPoll(timeoutMillis: 70000)
+    operation WaitForUpdate {
+        input: WaitForUpdateInput
+        output: WaitForUpdateOutput
+    }
 
 
 .. smithy-trait:: smithy.api#readonly
@@ -210,8 +328,8 @@ The ``paginated`` trait is a structure that contains the following members:
         operation output, it indicates that there are more results to retrieve.
         To get the next page of results, the client passes the received output
         continuation token to the input continuation token of the next request.
-        This output member MUST NOT be marked as ``required`` and SHOULD target
-        a string shape. It can, but SHOULD NOT target a map shape.
+        This output member SHOULD NOT be marked as ``required`` and SHOULD
+        target a string shape. It can, but SHOULD NOT target a map shape.
 
         When contained within a service, a paginated operation MUST either
         configure ``outputToken`` on the operation itself or inherit it from

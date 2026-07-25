@@ -11,6 +11,7 @@ import java.util.function.Predicate;
 import software.amazon.smithy.jmespath.ast.LiteralExpression;
 import software.amazon.smithy.jmespath.evaluation.JmespathAbstractRuntime;
 import software.amazon.smithy.jmespath.evaluation.JmespathRuntime;
+import software.amazon.smithy.utils.NumberUtils;
 
 final class Lexer<T> {
 
@@ -469,12 +470,7 @@ final class Lexer<T> {
         String lexeme = sliceFrom(start);
 
         try {
-            Number number;
-            if (lexeme.contains(".") || lexeme.toLowerCase().contains("e")) {
-                number = Double.parseDouble(lexeme);
-            } else {
-                number = Long.parseLong(lexeme);
-            }
+            Number number = NumberUtils.parseNumber(lexeme);
             LiteralExpression node = new LiteralExpression(number, currentLine, currentColumn);
             return new Token(TokenType.NUMBER, node, currentLine, currentColumn);
         } catch (NumberFormatException e) {

@@ -3,9 +3,7 @@ $version: "2.0"
 namespace aws.api
 
 /// Specifies an ARN template for the resource.
-@externalDocumentation(
-    Reference: "https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html"
-)
+@externalDocumentation(Reference: "https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html")
 @trait(selector: "resource")
 structure arn {
     /// Defines the ARN template. The provided string contains URI-template
@@ -70,6 +68,21 @@ structure arnReference {
     service: String
 }
 
+/// Indicates that the streaming blob supports aws-chunked content encoding.
+///
+/// When present, SDKs MUST aws-chunk encode the underlying data stream.
+/// aws-chunked encoding is a series of data blocks followed by a final block
+/// that contains metadata about the content transferred (e.g., checksums).
+@trait(
+    selector: "blob[trait|streaming]"
+    breakingChanges: [
+        {
+            change: "remove"
+        }
+    ]
+)
+structure awsChunked {}
+
 /// Indicates that the target operation should use the client's endpoint
 /// discovery logic.
 @trait(selector: "operation")
@@ -88,10 +101,7 @@ structure clientDiscoveredEndpoint {
 structure clientEndpointDiscovery {
     /// Indicates the operation that clients should use to discover endpoints
     /// for the service.
-    @idRef(
-        failWhenMissing: true
-        selector: "operation"
-    )
+    @idRef(failWhenMissing: true, selector: "operation")
     @required
     operation: String
 
@@ -99,10 +109,7 @@ structure clientEndpointDiscovery {
     /// is no longer valid. This error MUST be bound to any operation bound to
     /// the service which is marked with the aws.api#clientDiscoveredEndpoint
     /// trait.
-    @idRef(
-        failWhenMissing: true
-        selector: "structure[trait|error]"
-    )
+    @idRef(failWhenMissing: true, selector: "structure[trait|error]")
     @recommended
     error: String
 }
@@ -119,9 +126,7 @@ structure clientEndpointDiscoveryId {}
 /// Defines a service, resource, or operation as operating on the control plane.
 @trait(
     selector: ":test(service, resource, operation)"
-    conflicts: [
-        "aws.api#dataPlane"
-    ]
+    conflicts: ["aws.api#dataPlane"]
 )
 structure controlPlane {}
 
@@ -158,9 +163,7 @@ enum data {
 /// Defines a service, resource, or operation as operating on the data plane.
 @trait(
     selector: ":test(service, resource, operation)"
-    conflicts: [
-        "aws.api#controlPlane"
-    ]
+    conflicts: ["aws.api#controlPlane"]
 )
 structure dataPlane {}
 
@@ -195,7 +198,7 @@ structure service {
     cloudTrailEventSource: String
 
     /// The `docId` property is a string value that defines the identifier
-    /// used to implemention linking between service and SDK documentation for
+    /// used to implement linking between service and SDK documentation for
     /// AWS services. If not specified, this value defaults to the `sdkId` in
     /// lower case plus the service `version` property, separated by dashes.
     docId: String
@@ -228,13 +231,34 @@ structure tagEnabled {
     /// if the service does not have the standard tag operations supporting all
     /// resources on the service. Default value is `false`
     disableDefaultOperations: Boolean
+
+    /// Specifies non-default operation names for the service-wide tagging APIs.
+    /// Any unset member falls back to the default-named operation
+    /// (TagResource, UntagResource, ListTagsForResource respectively).
+    apiConfig: TaggableServiceApiConfig
+}
+
+/// Points to a service-bound operation designated for a service-wide tagging API.
+@idRef(failWhenMissing: true, selector: "service > operation")
+string ServiceTagOperationReference
+
+/// Structure representing the configuration of service-wide tagging APIs when
+/// non-default operation names are used. All members are optional; an unset
+/// member implies the default-named operation (TagResource, UntagResource,
+/// ListTagsForResource respectively) is used.
+structure TaggableServiceApiConfig {
+    /// The operation that creates or updates tags on resources for this service.
+    tagApi: ServiceTagOperationReference
+
+    /// The operation that removes tags from resources for this service.
+    untagApi: ServiceTagOperationReference
+
+    /// The operation that lists tags on resources for this service.
+    listTagsApi: ServiceTagOperationReference
 }
 
 /// Points to an operation designated for a tagging APi
-@idRef(
-    failWhenMissing: true
-    selector: "resource > operation"
-)
+@idRef(failWhenMissing: true, selector: "resource > operation")
 string TagOperationReference
 
 /// Structure representing the configuration of resource specific tagging APIs
@@ -273,7 +297,6 @@ structure taggable {
     /// Used by service principals. Default value is `false`
     disableSystemTags: Boolean
 }
-
 
 /// The possible delimiters for an ARN resource segment.
 @private

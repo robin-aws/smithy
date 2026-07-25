@@ -34,7 +34,6 @@ Table of contents
 =================
 
 .. toctree::
-    :numbered:
     :maxdepth: 1
 
     model
@@ -54,5 +53,6 @@ Table of contents
     endpoint-traits
     selectors
     model-validation
+    shape-closures
     idl
     json-ast

@@ -4,10 +4,15 @@
  */
 package software.amazon.smithy.model.loader;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -17,7 +22,6 @@ import software.amazon.smithy.model.SourceException;
 import software.amazon.smithy.model.SourceLocation;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.ObjectNode;
-import software.amazon.smithy.model.node.StringNode;
 import software.amazon.smithy.model.traits.TraitFactory;
 import software.amazon.smithy.utils.IoUtils;
 
@@ -66,12 +70,16 @@ final class ModelLoader {
                 loadJar(traitFactory, properties, filename, operationConsumer, stringTable);
                 return true;
             } else if (filename.endsWith(".json") || filename.equals(SourceLocation.NONE.getFilename())) {
-                try (InputStream inputStream = contentSupplier.get()) {
-                    // Assume it's JSON if there's an N/A filename.
-                    return loadParsedNode(Node.parse(inputStream, filename), operationConsumer);
+                try (InputStream inputStream = contentSupplier.get();
+                        Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+                    // Assume it's JSON if there's an N/A filename. Stream the AST directly from the
+                    // reader, materializing Nodes only for trait/metadata values.
+                    return JsonAstLoader.load(JsonAstReader.from(filename, reader, false), operationConsumer);
                 }
             } else {
-                LOGGER.warning(() -> "Ignoring unrecognized Smithy model file: " + filename);
+                if (!filename.endsWith("manifest")) {
+                    LOGGER.warning(() -> "Ignoring unrecognized Smithy model file: " + filename);
+                }
                 return false;
             }
         } catch (IOException e) {
@@ -88,15 +96,7 @@ final class ModelLoader {
         if (node.isObjectNode()) {
             ObjectNode model = node.expectObjectNode();
             if (model.containsMember("smithy")) {
-                StringNode versionNode = model.expectStringMember("smithy");
-                Version version = Version.fromString(versionNode.getValue());
-                if (version == null) {
-                    throw new ModelSyntaxException("Unsupported Smithy version number: " + versionNode.getValue(),
-                            versionNode);
-                } else {
-                    new AstModelLoader(version, model).parse(operationConsumer);
-                    return true;
-                }
+                return JsonAstLoader.load(new NodeAstReader(model), operationConsumer);
             }
         }
 
@@ -116,7 +116,18 @@ final class ModelLoader {
         URL manifestUrl = ModelDiscovery.createSmithyJarManifestUrl(filename);
         LOGGER.fine(() -> "Loading Smithy model imports from JAR: " + manifestUrl);
 
-        for (URL model : ModelDiscovery.findModels(manifestUrl)) {
+        List<URL> models;
+        try {
+            models = ModelDiscovery.findModels(manifestUrl);
+        } catch (ModelManifestException e) {
+            if (e.getCause() instanceof FileNotFoundException) {
+                LOGGER.info(() -> "Ignoring JAR without Smithy manifest: " + filename);
+                return;
+            }
+            throw e;
+        }
+
+        for (URL model : models) {
             try {
                 URLConnection connection = model.openConnection();
 

@@ -38,9 +38,15 @@ import software.amazon.smithy.utils.ListUtils;
  */
 public final class ModelTransformer {
     private final List<ModelTransformerPlugin> plugins;
+    private final ClassLoader classLoader;
 
     private ModelTransformer(List<ModelTransformerPlugin> plugins) {
+        this(plugins, null);
+    }
+
+    private ModelTransformer(List<ModelTransformerPlugin> plugins, ClassLoader classLoader) {
         this.plugins = ListUtils.copyOf(plugins);
+        this.classLoader = classLoader;
     }
 
     /**
@@ -83,7 +89,11 @@ public final class ModelTransformer {
      * @return Returns the created ModelTransformer.
      */
     public static ModelTransformer createWithServiceProviders(ClassLoader classLoader) {
-        return createWithServiceLoader(ServiceLoader.load(ModelTransformerPlugin.class, classLoader));
+        ServiceLoader<ModelTransformerPlugin> serviceLoader =
+                ServiceLoader.load(ModelTransformerPlugin.class, classLoader);
+        List<ModelTransformerPlugin> plugins = new ArrayList<>();
+        serviceLoader.forEach(plugins::add);
+        return new ModelTransformer(plugins, classLoader);
     }
 
     /**
@@ -145,7 +155,10 @@ public final class ModelTransformer {
             Model model,
             Map<ShapeId, ShapeId> renamed
     ) {
-        return this.renameShapes(model, renamed, () -> Model.assembler().disableValidation());
+        Supplier<ModelAssembler> supplier = classLoader == null
+                ? () -> Model.assembler().disableValidation()
+                : () -> Model.assembler(classLoader).disableValidation();
+        return this.renameShapes(model, renamed, supplier);
     }
 
     /**
@@ -722,5 +735,23 @@ public final class ModelTransformer {
      */
     public Model makeIdempotencyTokensClientOptional(Model model) {
         return MakeIdempotencyTokenClientOptional.transform(model);
+    }
+
+    /**
+     * Filters the model down to the shapes in the given {@code shapeClosures}.
+     *
+     * <p>The closures must be declared in the model's {@code shapeClosures} metadata. The
+     * resulting model contains every shape in any of the named closures (computed transitively
+     * through directed neighbor relationships). Prelude shapes are always retained. Renames
+     * declared on the closures are not applied; use the {@code flattenClosureNamespaces}
+     * smithy-build transform for that.
+     *
+     * @param model Model to transform.
+     * @param closures Ids of the closures to include.
+     * @return Returns the transformed model.
+     * @throws ModelTransformException if any of the given closure ids are not declared in the model.
+     */
+    public Model includeClosures(Model model, Collection<String> closures) {
+        return new IncludeClosures(closures).transform(this, model);
     }
 }

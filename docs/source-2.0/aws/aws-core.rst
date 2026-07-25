@@ -27,7 +27,7 @@ Value type
     * :ref:`service-cloudtrail-event-source`
     * :ref:`service-doc-id`
     * :ref:`service-endpoint-prefix`
-    * :ref:`service-cloudwatch-metric-namespace`
+    * :ref:`service-cloudwatch-namespace`
 
 The following example defines an AWS service that uses the default values of
 ``cloudFormationService``, ``arnNamespace``, ``cloudTrailEventSource`` and
@@ -243,12 +243,12 @@ a static, unique identifier. :ref:`service-sdk-id` should be used for those
 purposes. Additionally, this value can be used to attempt to resolve endpoints.
 
 
-.. _service-cloudwatch-metric-namespace:
+.. _service-cloudwatch-namespace:
 
-``cloudWatchMetricNamespace``
-=============================
+``cloudWatchNamespace``
+=======================
 
-The ``cloudWatchMetricNamespace`` property is a ``string`` value that defines
+The ``cloudWatchNamespace`` property is a ``string`` value that defines
 the `AWS customer-facing metric namespace`_ of most metrics emitted by the
 service.
 
@@ -1320,11 +1320,17 @@ members:
       - ``boolean``
       - Set to true to indicate that the service does not have default tagging
         operations that create, read, update, and delete tags on resources.
+    * - apiConfig
+      - :ref:`Taggable service API config structure <service-taggable-apiconfig-structure>`
+      - Specifies non-default operation names for the service-wide tagging
+        APIs. Any unset member falls back to the default-named operation.
 
 The default operations for resource tagging operations are named TagResource,
 UntagResource, and ListTagsForResource. All three operations are required to be
 in the service, and each operation must satisfy corresponding validation
-constraints unless ``disableDefaultOperations`` is set to **true**.
+constraints unless ``disableDefaultOperations`` is set to **true**. The
+``apiConfig`` member allows a service to use non-default operation names for
+any of the three slots; an unset slot falls back to the default name.
 
 The following is a minimal snippet showing the inclusion of the named required
 operations for the ``aws.api#tagEnabled``  Weather service.
@@ -1348,10 +1354,11 @@ tag associations on a resource:
 * Must have exactly one input member that targets a string shape and has a
   member name that matches ``^([R|r]esource)?([A|a]rn|ARN)$`` to accept
   the resource ARN.
-* Must have exactly one input member that targets a list shape, with list
-  member targeting a structure that consists of two members that target a
-  string shape representing the tag key or name and the tag value. This
-  member name must match: ``^[T|t]ag(s|[L|l]ist)$``
+* Must have exactly one input member that targets either a list shape (with
+  list member targeting a structure of two string members representing the
+  tag key and tag value) or a map shape with string keys and values. This
+  member name must match: ``^[T|t]ag(s|s?[M|m]ap|[L|l]ist)$`` (e.g., ``tags``,
+  ``TagList``, ``tagMap``, ``tagsMap``).
 
 The following snippet is a valid definition of a tag resource operation and
 its input:
@@ -1416,10 +1423,11 @@ resource.
 * Must have exactly one input member that targets a string shape and has a
   member name that matches: ``^([R|r]esource)?([A|a]rn|ARN)$`` to accept
   the resource ARN.
-* Must have exactly one output member that targets a list shape, with list
-  member targeting a structure that consists of two members that target a
-  string shape representing the tag key or name and the tag value. This
-  member name must match: ``^[T|t]ag(s|[L|l]ist)$``
+* Must have exactly one output member that targets either a list shape (with
+  list member targeting a structure of two string members representing the
+  tag key and tag value) or a map shape with string keys and values. This
+  member name must match: ``^[T|t]ag(s|s?[M|m]ap|[L|l]ist)$`` (e.g., ``tags``,
+  ``TagList``, ``tagMap``, ``tagsMap``).
 
 The following snippet is an example of the list tags for resource operation and
 its input:
@@ -1460,6 +1468,58 @@ through the operates attached to the service.
             forecastId: ForecastId
         }
     }
+
+A service that uses non-default operation names can specify them via
+``apiConfig``. Each member is independently optional; a slot left unset falls
+back to the default-named operation.
+
+.. code-block:: smithy
+
+    @tagEnabled(apiConfig: {
+        tagApi: AddTagsToResource
+        untagApi: RemoveTagsFromResource
+        listTagsApi: DescribeTagsForResource
+    })
+    service Weather {
+        resources: [Forecast]
+        operations: [AddTagsToResource, RemoveTagsFromResource, DescribeTagsForResource]
+    }
+
+
+.. _service-taggable-apiconfig-structure:
+
+Taggable service API config structure
+=====================================
+
+Configuration structure for specifying service-wide tagging operations when
+non-default operation names are used. Any unset member falls back to the
+default-named operation (``TagResource``, ``UntagResource``,
+``ListTagsForResource`` respectively).
+
+**Properties**
+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 10 60
+
+    * - Property
+      - Type
+      - Description
+    * - tagApi
+      - ``ShapeID``
+      - **Optional** Defines the service-wide operation that creates and
+        updates tags on resources. The value MUST be a valid :ref:`shape-id`
+        that targets an ``operation`` shape bound to the service.
+    * - untagApi
+      - ``ShapeID``
+      - **Optional** Defines the service-wide operation that removes tags
+        from resources. The value MUST be a valid :ref:`shape-id` that
+        targets an ``operation`` shape bound to the service.
+    * - listTagsApi
+      - ``ShapeID``
+      - **Optional** Defines the service-wide operation that lists tags on
+        resources. The value MUST be a valid :ref:`shape-id` that targets an
+        ``operation`` shape bound to the service.
 
 
 .. smithy-trait:: aws.api#taggable
@@ -1595,6 +1655,52 @@ if applicable.
       - **Required** Defines the operation used to list tags for the resource.
         The value MUST be a valid :ref:`shape-id` that targets an ``operation``
         shape.
+
+
+.. smithy-trait:: aws.api#awsChunked
+.. _aws.api#awsChunked-trait:
+
+-------------------------------
+``aws.api#awsChunked`` trait
+-------------------------------
+
+Summary
+    Indicates that the streaming blob supports aws-chunked content encoding.
+    When present, SDKs MUST aws-chunk encode the underlying data stream.
+    aws-chunked encoding is a series of data blocks followed by a final block
+    that contains metadata about the content transferred, such as checksums.
+Trait selector
+    ``blob[trait|streaming]``
+
+    *A blob shape marked with the streaming trait*
+Value type
+    Annotation trait
+
+aws-chunked encoding is a mechanism to collect metadata about a data stream
+while streaming it, instead of paying an up-front cost. For example, when
+calculating a checksum, an SDK would normally consume the entire stream to
+compute it. With aws-chunked encoding, a running checksum is updated as
+chunks of data are streamed, and the full checksum is sent as a trailing
+header.
+
+If an SDK knows the information that will be included in the trailer headers
+ahead of time (e.g., the modeled checksum), SDKs MUST NOT use aws-chunked
+encoding. The encoding would be unnecessary overhead in the request.
+
+If a data stream has both the ``awsChunked`` trait and the
+:ref:`requiresLength-trait`, SDKs MUST set the header
+``x-amz-decoded-Content-Length`` to the length of the unencoded content, and
+MUST NOT set the header ``Content-Length``.
+
+aws-chunked MUST be applied after other content encodings such as gzip. When
+the :ref:`requestCompression-trait` is specified, compression MUST occur
+before the stream content encoding.
+
+.. code-block:: smithy
+
+    @streaming
+    @awsChunked
+    blob StreamingBlob
 
 
 --------

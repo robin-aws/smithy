@@ -725,6 +725,27 @@ modified conflicting errors are then added to the combined response object.
         }
     }
 
+.. _generate-openapi-setting-useStringsForArbitraryPrecision:
+
+useStringsForArbitraryPrecision (``boolean``)
+=============================================
+
+Set to ``true`` to use JSON strings instead of numbers to maintain arbitrary
+precision in cases where parsers don't handle it properly with numbers.
+
+.. code-block:: json
+    :caption: smithy-build.json
+
+    {
+        "version": "1.0",
+        "plugins": {
+            "openapi": {
+                "service": "example.weather#Weather",
+                "useStringsForArbitraryPrecision": true
+            }
+        }
+    }
+
 ----------------------------------
 JSON schema configuration settings
 ----------------------------------
@@ -1722,6 +1743,38 @@ headers will be omitted.
     }
 
 
+.. _generate-openapi-apigateway-setting-corsOriginKey:
+
+corsOriginKey (``string``)
+--------------------------
+
+Sets the key to select from the ``origins`` map of the ``cors`` trait when
+generating a REST API. REST APIs only support a single
+``Access-Control-Allow-Origin`` value per response. When the ``cors`` trait
+uses the ``origins`` map, this setting is required to select which entry to
+use by its key name.
+
+This setting is ignored for HTTP APIs, which natively support multiple
+origins through the ``allowOrigins`` array in the
+``x-amazon-apigateway-cors`` extension.
+
+An error is raised if the ``origins`` map is used without this setting, or
+if the specified key is not found in the map.
+
+.. code-block:: json
+    :caption: smithy-build.json
+
+    {
+        "version": "1.0",
+        "plugins": {
+            "openapi": {
+                "service": "example.weather#Weather",
+                "corsOriginKey": "prod"
+            }
+        }
+    }
+
+
 .. _generate-openapi-apigateway-setting-syncCorsPreflightIntegration:
 
 syncCorsPreflightIntegration (``boolean``)
@@ -1754,6 +1807,47 @@ API Gateway in a top-level extension named `x-amazon-apigateway-binary-media-typ
 Smithy will automatically detect every media type used in a service by
 collecting all of the :ref:`mediaType-trait` values for all members marked
 with :ref:`httppayload-trait`.
+
+
+Minimum compression size
+========================
+
+The minimum payload size in bytes at which compression is applied on an
+API Gateway REST API can be set using the
+:ref:`aws.apigateway#minimumCompressionSize-trait`. The value must be
+between 0 and 10485760 bytes (10 MB), inclusive. Smithy will add the
+value of the trait to the generated OpenAPI document as the top-level
+`x-amazon-apigateway-minimum-compression-size`_ extension.
+
+The following Smithy model enables compression on payloads of 1024 bytes
+or larger:
+
+.. code-block:: smithy
+
+    $version: "2"
+    namespace smithy.example
+
+    use aws.apigateway#minimumCompressionSize
+    use aws.protocols#restJson1
+
+    @restJson1
+    @minimumCompressionSize(1024)
+    service Example {
+      version: "2019-06-17"
+    }
+
+is converted to the following OpenAPI model:
+
+.. code-block:: json
+
+    {
+        "openapi": "3.0.2",
+        "info": {
+            "title": "Example",
+            "version": "2019-06-17"
+        },
+        "x-amazon-apigateway-minimum-compression-size": 1024
+    }
 
 
 .. _apigateway-request-validators:
@@ -1829,6 +1923,30 @@ applied to a resource shape, then all operations of the resource and all child
 resources inherit the applied integration. If either trait is applied to an
 operation, then the operation uses a specific integration that overrides any
 integration inherited from a resource or service.
+
+The following ``aws.apigateway#integration`` trait fields map directly to
+``x-amazon-apigateway-integration`` OpenAPI extension fields:
+
+tlsConfig
+    Maps to ``x-amazon-apigateway-integration.tlsConfig`` in the OpenAPI
+    output. Contains the ``insecureSkipVerification`` boolean member. When
+    set to ``true``, API Gateway skips verification that the certificate for
+    an integration endpoint is issued by a supported certificate authority.
+    Supported only for HTTP and HTTP_PROXY integration types.
+
+responseTransferMode
+    Maps to ``x-amazon-apigateway-integration.responseTransferMode`` in the
+    OpenAPI output. Specifies how the response payload is transferred between
+    the integration and the caller. Valid values are ``BUFFERED`` and
+    ``STREAM``.
+
+integrationTarget
+    Maps to ``x-amazon-apigateway-integration.integrationTarget`` in the
+    OpenAPI output. The ARN of an `Application Load Balancer (ALB)`_ or
+    `Network Load Balancer (NLB)`_ listener for private integrations using
+    `VPC Links V2`_. Values containing ``${...}`` syntax are automatically
+    wrapped in an `Fn::Sub`_ intrinsic function for CloudFormation
+    substitution. See :ref:`openapi-cfn-substitutions`.
 
 
 CORS functionality
@@ -2041,43 +2159,10 @@ Is converted to the following OpenAPI model:
     }
 
 
-.. _openapi-cfn-substitutions:
-
-AWS CloudFormation substitutions
-================================
-
-OpenAPI specifications used with Amazon API Gateway are commonly deployed
-through AWS CloudFormation. Values within an OpenAPI specification for things
-like the region a service is deployed and resources used within the service
-are often unknown until deployment-time. CloudFormation offers the ability
-to use `intrinsic functions`_ in a JSON document to resolve, find, and
-replace this unknown data at deployment-time.
-
-When the ``software.amazon.smithy:smithy-aws-apigateway-openapi`` library
-is loaded on the classpath, Smithy will treat specific, well-known parts
-of an OpenAPI specification as an `Fn::Sub`_. This allows Smithy models
-to refer to variables that aren't available until a stack is created
-using the format of ``${x}`` where "x" is the variable name.
-
-Smithy will automatically wrap the following locations of an OpenAPI
-specification in an ``Fn::Sub`` if the value contained in the location
-uses the ``Fn::Sub`` variable syntax (``*`` means any value):
-
-- ``components/securitySchemes/*/x-amazon-apigateway-authorizer/providerARNs/*``
-- ``components/securitySchemes/*/x-amazon-apigateway-authorizer/authorizerCredentials``
-- ``components/securitySchemes/*/x-amazon-apigateway-authorizer/authorizerUri``
-- ``paths/*/*/x-amazon-apigateway-integration/connectionId``
-- ``paths/*/*/x-amazon-apigateway-integration/credentials``
-- ``paths/*/*/x-amazon-apigateway-integration/uri``
-
-.. note::
-
-    This functionality can be disabled by setting the ``disableCloudFormationSubstitution``
-    configuration property to ``true``.
-
+.. _amazon-cognito-user-pools:
 
 Amazon Cognito User Pools
-=========================
+-------------------------
 
 Smithy adds Cognito User Pool based authentication to the OpenAPI model when
 the :ref:`aws.auth#cognitoUserPools-trait` is added to a service shape.
@@ -2105,8 +2190,51 @@ entry:
 In the entry, ``providerARNs`` will be populated from the ``providerArns`` list
 from the trait.
 
+Per-operation scopes can be required by applying the
+:ref:`aws.auth#cognitoUserPoolsScopes-trait` to an operation. When scopes
+are present, Smithy emits a ``security`` requirement on the generated OpenAPI
+operation that uses the ``aws.auth.cognitoUserPools`` scheme name:
+
+.. code-block:: smithy
+
+    $version: "2"
+    namespace smithy.example
+
+    use aws.auth#cognitoUserPools
+    use aws.auth#cognitoUserPoolsScopes
+    use aws.protocols#restJson1
+
+    @restJson1
+    @cognitoUserPools(
+        providerArns: ["arn:aws:cognito-idp:us-east-1:123:userpool/123"])
+    service Example {
+        version: "2019-06-17"
+        operations: [GetThing]
+    }
+
+    @cognitoUserPoolsScopes(["email", "profile"])
+    @http(method: "GET", uri: "/things")
+    operation GetThing {}
+
+The ``GetThing`` operation in the generated OpenAPI will include:
+
+.. code-block:: json
+
+    {
+        "security": [
+            {
+                "aws.auth.cognitoUserPools": [
+                    "email",
+                    "profile"
+                ]
+            }
+        ]
+    }
+
+Operations without the trait inherit the service-level security requirement.
+
 Amazon API Gateway API key usage plans
-======================================
+--------------------------------------
 
 Smithy enables `API Gateway's API key usage plans`_ when a scheme based on the
 :ref:`httpApiKeyAuth-trait` is set and configured as :ref:`an authorizer
@@ -2136,21 +2264,359 @@ The following Smithy model enables API Gateway's API key usage plans on the
     operation OperationA {}
 
 
+.. _openapi-cfn-substitutions:
+
+AWS CloudFormation substitutions
+================================
+
+OpenAPI specifications used with Amazon API Gateway are commonly deployed
+through AWS CloudFormation. Values within an OpenAPI specification for things
+like the region a service is deployed and resources used within the service
+are often unknown until deployment-time. CloudFormation offers the ability
+to use `intrinsic functions`_ in a JSON document to resolve, find, and
+replace this unknown data at deployment-time.
+
+When the ``software.amazon.smithy:smithy-aws-apigateway-openapi`` library
+is loaded on the classpath, Smithy will treat specific, well-known parts
+of an OpenAPI specification as an `Fn::Sub`_. This allows Smithy models
+to refer to variables that aren't available until a stack is created
+using the format of ``${x}`` where "x" is the variable name.
+
+Smithy will automatically wrap the following locations of an OpenAPI
+specification in an ``Fn::Sub`` if the value contained in the location
+uses the ``Fn::Sub`` variable syntax (``*`` means any value):
+
+- ``components/securitySchemes/*/x-amazon-apigateway-authorizer/providerARNs/*``
+- ``components/securitySchemes/*/x-amazon-apigateway-authorizer/authorizerCredentials``
+- ``components/securitySchemes/*/x-amazon-apigateway-authorizer/authorizerUri``
+- ``paths/*/*/x-amazon-apigateway-integration/connectionId``
+- ``paths/*/*/x-amazon-apigateway-integration/credentials``
+- ``paths/*/*/x-amazon-apigateway-integration/uri``
+- ``paths/*/*/x-amazon-apigateway-integration/integrationTarget``
+- ``x-amazon-apigateway-endpoint-configuration/vpcEndpointIds/*``
+
+.. note::
+
+    This functionality can be disabled by setting the ``disableCloudFormationSubstitution``
+    configuration property to ``true``.
+
+
+.. _apigateway-gateway-responses:
+
+Gateway responses
+=================
+
+Custom gateway responses for an API Gateway REST API can be defined using
+the :ref:`aws.apigateway#gatewayResponses-trait`. Smithy writes the trait
+value to the `x-amazon-apigateway-gateway-responses`_ extension in the
+generated OpenAPI document.
+
+.. note::
+
+    When both ``@gatewayResponses`` and ``@cors`` are applied to a
+    service, the gateway responses take precedence. The CORS mapper
+    merges its headers into gateway responses without overwriting
+    customer-defined response parameters.
+
+The following Smithy model defines custom 4xx and 5xx gateway responses:
+
+.. code-block:: smithy
+
+    $version: "2"
+    namespace smithy.example
+
+    use aws.apigateway#gatewayResponses
+    use aws.protocols#restJson1
+
+    @restJson1
+    @gatewayResponses(
+        "DEFAULT_4XX": {
+            statusCode: "400"
+            responseParameters: {
+                "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+            }
+            responseTemplates: {
+                "application/json": "{\"message\": \"bad request\"}"
+            }
+        }
+        "DEFAULT_5XX": {
+            statusCode: "500"
+            responseTemplates: {
+                "application/json": "{\"message\": \"Internal server error\"}"
+            }
+        }
+    )
+    service Example {
+      version: "2019-06-17"
+    }
+
+is converted to the following OpenAPI model:
+
+.. code-block:: json
+
+    {
+        "openapi": "3.0.2",
+        "info": {
+            "title": "Example",
+            "version": "2019-06-17"
+        },
+        "x-amazon-apigateway-gateway-responses": {
+            "DEFAULT_4XX": {
+                "statusCode": "400",
+                "responseParameters": {
+                    "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+                },
+                "responseTemplates": {
+                    "application/json": "{\"message\": \"bad request\"}"
+                }
+            },
+            "DEFAULT_5XX": {
+                "statusCode": "500",
+                "responseTemplates": {
+                    "application/json": "{\"message\": \"Internal server error\"}"
+                }
+            }
+        }
+    }
+
+
+.. _apigateway-api-tls-policy:
+
+API TLS policy
+==============
+
+The TLS security policy and endpoint access mode for an API Gateway REST
+API can be set using the :ref:`aws.apigateway#apiTlsPolicy-trait`. Smithy
+writes the ``securityPolicy`` value to the
+`x-amazon-apigateway-security-policy`_ extension and the optional
+``endpointAccessMode`` value to the
+`x-amazon-apigateway-endpoint-access-mode`_ extension in the generated
+OpenAPI document.
+
+The following Smithy model sets the TLS policy to ``TLS_1_2`` with a
+``STRICT`` endpoint access mode:
+
+.. code-block:: smithy
+
+    $version: "2"
+    namespace smithy.example
+
+    use aws.apigateway#apiTlsPolicy
+    use aws.protocols#restJson1
+
+    @restJson1
+    @apiTlsPolicy(
+        securityPolicy: "TLS_1_2"
+        endpointAccessMode: "STRICT"
+    )
+    service Example {
+      version: "2019-06-17"
+    }
+
+is converted to the following OpenAPI model:
+
+.. code-block:: json
+
+    {
+        "openapi": "3.0.2",
+        "info": {
+            "title": "Example",
+            "version": "2019-06-17"
+        },
+        "x-amazon-apigateway-security-policy": "TLS_1_2",
+        "x-amazon-apigateway-endpoint-access-mode": "STRICT"
+    }
+
+
+.. _apigateway-endpoint-configuration:
+
+Endpoint configuration
+======================
+
+The endpoint configuration for an API Gateway REST API can be set using the
+:ref:`aws.apigateway#endpointConfiguration-trait`. Smithy writes the
+``vpcEndpointIds`` and ``disableExecuteApiEndpoint`` values to the
+`x-amazon-apigateway-endpoint-configuration`_ extension in the generated
+OpenAPI document. The ``types`` and ``ipAddressType`` members are not part
+of this extension and are configured outside of the OpenAPI document at
+API import time.
+
+The following Smithy model configures a private API with VPC endpoints and
+disables the default ``execute-api`` endpoint:
+
+.. code-block:: smithy
+
+    $version: "2"
+    namespace smithy.example
+
+    use aws.apigateway#endpointConfiguration
+    use aws.protocols#restJson1
+
+    @restJson1
+    @endpointConfiguration(
+        types: ["PRIVATE"]
+        vpcEndpointIds: ["vpce-0212a4ababd5b8c3e"]
+        disableExecuteApiEndpoint: true
+        ipAddressType: "dualstack"
+    )
+    service Example {
+      version: "2019-06-17"
+    }
+
+is converted to the following OpenAPI model:
+
+.. code-block:: json
+
+    {
+        "openapi": "3.0.2",
+        "info": {
+            "title": "Example",
+            "version": "2019-06-17"
+        },
+        "x-amazon-apigateway-endpoint-configuration": {
+            "vpcEndpointIds": ["vpce-0212a4ababd5b8c3e"],
+            "disableExecuteApiEndpoint": true
+        }
+    }
+
+
 .. _other-traits:
 
 Other traits that influence API Gateway
 =======================================
 
+``aws.apigateway#apiKeyRequired``
+    Requires an API key on individual operations for usage plan enforcement.
+    The OpenAPI mapper adds an ``api_key`` security scheme and a per-operation
+    security requirement on annotated operations.
+
 ``aws.apigateway#apiKeySource``
     Specifies the source of the caller identifier that will be used to
-    throttle API methods that require a key. This trait is converted into
-    the `x-amazon-apigateway-api-key-source`_ OpenAPI extension.
+    throttle API methods that require a key. Converted into the
+    `x-amazon-apigateway-api-key-source`_ OpenAPI extension.
+
+``aws.apigateway#apiTlsPolicy``
+    Configures the TLS security policy and endpoint access mode for a
+    REST API. The ``securityPolicy`` value is written to the
+    `x-amazon-apigateway-security-policy`_ extension; ``endpointAccessMode``
+    is written to the `x-amazon-apigateway-endpoint-access-mode`_ extension
+    when set.
 
 ``aws.apigateway#authorizers``
     Lambda authorizers to attach to the authentication schemes defined on
     this service.
 
     .. seealso:: See :ref:`authorizers`
+
+``aws.apigateway#endpointConfiguration``
+    Configures endpoint types, VPC endpoint IDs, default-endpoint disable
+    flag, and IP address type for a REST API. ``vpcEndpointIds`` and
+    ``disableExecuteApiEndpoint`` are written to the
+    `x-amazon-apigateway-endpoint-configuration`_ extension; ``types`` and
+    ``ipAddressType`` are configured outside of the OpenAPI document at
+    API import time.
+
+``aws.apigateway#gatewayResponses``
+    Customizes error responses for authentication failures, integration
+    errors, and other API Gateway-generated errors. Written to the
+    `x-amazon-apigateway-gateway-responses`_ extension.
+
+``aws.apigateway#minimumCompressionSize``
+    Sets the minimum payload size at which response compression is applied.
+    Written to the `x-amazon-apigateway-minimum-compression-size`_ extension.
+
+``aws.apigateway#resourcePolicy``
+    Attaches a resource policy to a REST API. Written to the
+    `x-amazon-apigateway-policy`_ extension.
+
+``aws.auth#cognitoUserPools``
+    Adds Amazon Cognito User Pools authentication. Emits a
+    ``securitySchemes`` entry in the generated OpenAPI document.
+
+    .. seealso:: See :ref:`amazon-cognito-user-pools`
+
+``aws.auth#cognitoUserPoolsScopes``
+    Defines per-operation OAuth scopes for Cognito-authorized operations.
+    When the scopes list is non-empty, the mapper emits a ``security``
+    requirement on the operation that uses the ``aws.auth.cognitoUserPools``
+    scheme name.
+
+    .. seealso:: See :ref:`amazon-cognito-user-pools`
+
+
+.. _apigateway-recommendations:
+
+Recommendations and common workarounds
+======================================
+
+When a trait does not yet exist for a property you need on the generated
+OpenAPI, or when values have to come from deployment-time variables, prefer
+the patterns below over hand-editing the OpenAPI output.
+
+Inject values with CloudFormation ``Fn::Sub``
+---------------------------------------------
+
+When deploying through CloudFormation, values like VPC endpoint IDs, Cognito
+user pool ARNs, Lambda function ARNs, and IAM role ARNs are typically unknown
+until stack creation. Smithy automatically wraps strings matching the
+``${variable}`` pattern in an ``Fn::Sub`` intrinsic function at specific
+well-known paths in the OpenAPI document:
+
+.. code-block:: smithy
+
+    @endpointConfiguration(
+        types: ["PRIVATE"]
+        vpcEndpointIds: ["${MyVpcEndpointId}"]
+    )
+
+At conversion time the list entry becomes ``{"Fn::Sub": "${MyVpcEndpointId}"}``
+in the generated OpenAPI. The full list of substitution paths is documented
+in :ref:`openapi-cfn-substitutions`. Paths outside that list are passed
+through as literal strings; use ``jsonAdd`` for those.
+
+Add OpenAPI output with ``jsonAdd``
+-----------------------------------
+
+For properties that do not yet have a Smithy trait, the
+:ref:`jsonAdd <generate-openapi-setting-jsonAdd>` setting in
+``smithy-build.json`` can insert arbitrary OpenAPI content at a specific JSON
+pointer:
+
+.. code-block:: json
+
+    {
+        "plugins": {
+            "openapi": {
+                "service": "smithy.example#Weather",
+                "jsonAdd": {
+                    "/x-amazon-apigateway-binary-media-types": ["image/png", "image/jpeg"]
+                }
+            }
+        }
+    }
+
+Prefer a dedicated trait when one exists. ``jsonAdd`` bypasses Smithy
+validation and is not portable to other OpenAPI consumers. Use it as an
+escape hatch, not a default.
+
+Replace tokens with ``substitutions``
+-------------------------------------
+
+:ref:`substitutions <generate-openapi-setting-substitutions>` performs a
+literal string find-and-replace on the generated OpenAPI. This is useful
+for build-time values that are known per-pipeline rather than per-deployment.
+Values replaced by ``substitutions`` are not wrapped in ``Fn::Sub``, so
+they become literal strings in the output. Prefer CloudFormation
+substitutions for deployment-time values and ``substitutions`` for
+build-time tokens.
+
+Disable CloudFormation substitutions when targeting non-AWS deployers
+---------------------------------------------------------------------
+
+If the generated OpenAPI is not deployed through CloudFormation, set
+:ref:`disableCloudFormationSubstitution <generate-openapi-apigateway-setting-disableCloudFormationSubstitution>`
+to ``true`` so that strings containing ``${...}`` are passed through
+unchanged.
 
 
 Amazon API Gateway limitations
@@ -2226,7 +2692,7 @@ The conversion process is highly extensible through
 .. _x-amazon-apigateway-request-validators: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-request-validators.html
 .. _x-amazon-apigateway-request-validator: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-request-validator.html
 .. _intrinsic functions: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference.html
-.. _`Fn::Sub`: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-sub.html
+.. _`Fn::Sub`: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-sub.html
 .. _x-amazon-apigateway-api-key-source: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-api-key-source.html
 .. _OpenAPI tags: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.3.md#tagObject
 .. _OpenAPI Data types: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.3.md#data-types
@@ -2239,3 +2705,12 @@ The conversion process is highly extensible through
 .. _OpenAPI specification extension: https://spec.openapis.org/oas/v3.1.0#specification-extensions
 .. _integration's passthroughBehavior: https://docs.aws.amazon.com/apigateway/latest/developerguide/integration-passthrough-behaviors.html
 .. _gradle installed: https://gradle.org/install/
+.. _x-amazon-apigateway-gateway-responses: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-gateway-responses.html
+.. _x-amazon-apigateway-security-policy: https://docs.aws.amazon.com/apigateway/latest/developerguide/openapi-extensions-security-policy.html
+.. _x-amazon-apigateway-endpoint-access-mode: https://docs.aws.amazon.com/apigateway/latest/developerguide/openapi-extensions-endpoint-access-mode.html
+.. _x-amazon-apigateway-endpoint-configuration: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-endpoint-configuration.html
+.. _x-amazon-apigateway-minimum-compression-size: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-openapi-minimum-compression-size.html
+.. _x-amazon-apigateway-policy: https://docs.aws.amazon.com/apigateway/latest/developerguide/openapi-extensions-policy.html
+.. _Application Load Balancer (ALB): https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html
+.. _Network Load Balancer (NLB): https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html
+.. _VPC Links V2: https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-vpc-links-v2.html

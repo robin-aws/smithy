@@ -5,7 +5,9 @@
 package software.amazon.smithy.traitcodegen;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,7 +28,7 @@ import software.amazon.smithy.model.node.ArrayNode;
 import software.amazon.smithy.model.node.ObjectNode;
 
 public class TraitCodegenPluginTest {
-    private static final int EXPECTED_NUMBER_OF_FILES = 104;
+    private static final int EXPECTED_NUMBER_OF_FILES = 107;
 
     private MockManifest manifest;
     private Model model;
@@ -67,6 +69,18 @@ public class TraitCodegenPluginTest {
         assertThat(fileList,
                 hasItem(
                         Paths.get("/com/example/traits/nested/NestedNamespaceStruct.java").toString()));
+
+        assertThat(
+                manifest.getFileString("/com/example/traits/nested/NestedNamespaceTrait.java").get(),
+                containsString("public NestedNamespaceTrait createTrait(ShapeId target, Node value) {"));
+
+        assertThat(
+                manifest.getFileString("/com/example/traits/documents/DocumentTrait.java").get(),
+                containsString("public DocumentTrait createTrait(ShapeId target, Node value) {"));
+
+        assertThat(
+                manifest.getFileString("/com/example/traits/numbers/IntegerTrait.java").get(),
+                containsString("public IntegerTrait createTrait(ShapeId target, Node value) {"));
     }
 
     @Test
@@ -87,6 +101,61 @@ public class TraitCodegenPluginTest {
 
         assertFalse(manifest.getFiles().isEmpty());
         assertEquals(EXPECTED_NUMBER_OF_FILES - 1, manifest.getFiles().size());
+    }
+
+    @Test
+    public void generatesBothUnionGettersByDefault() {
+        PluginContext context = PluginContext.builder()
+                .fileManifest(manifest)
+                .settings(ObjectNode.builder()
+                        .withMember("package", "com.example.traits")
+                        .withMember("namespace", "test.smithy.traitcodegen")
+                        .withMember("header", ArrayNode.fromStrings("Header line One"))
+                        .build())
+                .model(model)
+                .build();
+
+        new TraitCodegenPlugin().execute(context);
+
+        String unionTrait = manifest.getFileString("/com/example/traits/unions/UnionTrait.java").get();
+        assertThat(unionTrait, containsString("public abstract Object getContents();"));
+        assertThat(unionTrait, containsString("public <T> T getValue() {"));
+        assertThat(unionTrait, containsString("@Deprecated"));
+
+        // A union nested in another trait is generated through a separate path and
+        // must behave the same.
+        String nestedUnion = manifest.getFileString("/com/example/traits/structures/MyUnion.java").get();
+        assertThat(nestedUnion, containsString("public abstract Object getContents();"));
+        assertThat(nestedUnion, containsString("public <T> T getValue() {"));
+    }
+
+    @Test
+    public void excludesDeprecatedUnionGetterWhenConfigured() {
+        PluginContext context = PluginContext.builder()
+                .fileManifest(manifest)
+                .settings(ObjectNode.builder()
+                        .withMember("package", "com.example.traits")
+                        .withMember("namespace", "test.smithy.traitcodegen")
+                        .withMember("header", ArrayNode.fromStrings("Header line One"))
+                        .withMember("excludeDeprecatedUnionGetters", true)
+                        .build())
+                .model(model)
+                .build();
+
+        new TraitCodegenPlugin().execute(context);
+
+        String unionTrait = manifest.getFileString("/com/example/traits/unions/UnionTrait.java").get();
+
+        // The type-safe getter remains, but the deprecated type-erased getter is
+        // dropped entirely.
+        assertThat(unionTrait, containsString("public abstract Object getContents();"));
+        assertThat(unionTrait, not(containsString("public <T> T getValue() {")));
+
+        // The setting also applies to unions nested in another trait, which take a
+        // separate generation path.
+        String nestedUnion = manifest.getFileString("/com/example/traits/structures/MyUnion.java").get();
+        assertThat(nestedUnion, containsString("public abstract Object getContents();"));
+        assertThat(nestedUnion, not(containsString("public <T> T getValue() {")));
     }
 
     @Test

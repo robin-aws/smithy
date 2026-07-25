@@ -60,7 +60,7 @@ public final class SmithyIdlModelSerializer {
     private final Predicate<Trait> traitFilter;
     private final Function<Shape, Path> shapePlacer;
     private final Path basePath;
-    private final SmithyIdlComponentOrder componentOrder;
+    private final SmithyIdlSerializationOrder componentOrder;
     private final String inlineInputSuffix;
     private final String inlineOutputSuffix;
     private final boolean inferInlineIoSuffixes;
@@ -382,7 +382,7 @@ public final class SmithyIdlModelSerializer {
         private Function<Shape, Path> shapePlacer = SmithyIdlModelSerializer::placeShapesByNamespace;
         private Path basePath = null;
         private boolean serializePrelude = false;
-        private SmithyIdlComponentOrder componentOrder = SmithyIdlComponentOrder.PREFERRED;
+        private SmithyIdlSerializationOrder componentOrder = SmithyIdlComponentOrder.PREFERRED;
         private String inlineInputSuffix = DEFAULT_INLINE_INPUT_SUFFIX;
         private String inlineOutputSuffix = DEFAULT_INLINE_OUTPUT_SUFFIX;
         private boolean inferInlineIoSuffixes = false;
@@ -478,6 +478,21 @@ public final class SmithyIdlModelSerializer {
         }
 
         /**
+         * Defines how components are sorted in the model using a custom ordering configuration.
+         *
+         * <p>Implement {@link SmithyIdlSerializationOrder} to provide custom comparators for shapes,
+         * traits, and metadata. The built-in orderings are available as constants on
+         * {@link SmithyIdlComponentOrder}.
+         *
+         * @param componentOrder Custom component ordering configuration.
+         * @return Returns the builder.
+         */
+        public Builder componentOrder(SmithyIdlSerializationOrder componentOrder) {
+            this.componentOrder = Objects.requireNonNull(componentOrder);
+            return this;
+        }
+
+        /**
          * Defines what suffixes are checked on operation input shapes to determine whether
          * inline syntax should be used.
          *
@@ -556,7 +571,7 @@ public final class SmithyIdlModelSerializer {
         private final Predicate<Trait> traitFilter;
         private final Model model;
         private final Set<ShapeId> inlineableShapes;
-        private final SmithyIdlComponentOrder componentOrder;
+        private final SmithyIdlSerializationOrder componentOrder;
 
         ShapeSerializer(
                 SmithyCodeWriter codeWriter,
@@ -564,7 +579,7 @@ public final class SmithyIdlModelSerializer {
                 Predicate<Trait> traitFilter,
                 Model model,
                 Set<ShapeId> inlineableShapes,
-                SmithyIdlComponentOrder componentOrder
+                SmithyIdlSerializationOrder componentOrder
         ) {
             this.codeWriter = codeWriter;
             this.nodeSerializer = nodeSerializer;
@@ -703,7 +718,7 @@ public final class SmithyIdlModelSerializer {
                 }
             }
 
-            Comparator<Trait> traitComparator = componentOrder.toShapeIdComparator();
+            Comparator<Trait> traitComparator = componentOrder.traitComparator();
 
             traits.values()
                     .stream()
@@ -950,8 +965,10 @@ public final class SmithyIdlModelSerializer {
          */
         private void serialize(Node node, Shape shape) {
             // ShapeIds are represented differently than strings, so if a shape looks like it's
-            // representing a shapeId we need to serialize it without quotes.
-            if (isShapeId(shape)) {
+            // representing a shapeId we need to serialize it without quotes. However, if the
+            // shape ID doesn't resolve to a shape in the model, it must be quoted to ensure
+            // valid IDL output (the target may not exist when @idRef failWhenMissing is false).
+            if (isShapeId(shape) && isResolvableShapeId(node)) {
                 serializeShapeId(node.expectStringNode());
                 return;
             }
@@ -980,6 +997,18 @@ public final class SmithyIdlModelSerializer {
                 return false;
             }
             return shape.getMemberTrait(model, IdRefTrait.class).isPresent();
+        }
+
+        private boolean isResolvableShapeId(Node node) {
+            if (!node.isStringNode()) {
+                return false;
+            }
+            try {
+                ShapeId id = ShapeId.from(node.expectStringNode().getValue());
+                return model.getShape(id).isPresent();
+            } catch (ShapeIdSyntaxException e) {
+                return false;
+            }
         }
 
         private void serializeString(StringNode node) {

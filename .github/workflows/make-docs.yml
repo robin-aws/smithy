@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repo 
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Setup
       run: |
         mkdir -p $ARTIFACTS_DIR
@@ -35,13 +35,6 @@ jobs:
         java-version: 17
         distribution: 'corretto'
         cache: gradle
-
-    - name: Setup Node
-      uses: actions/setup-node@v6
-      with:
-        node-version: latest
-        cache: npm
-        cache-dependency-path: "docs/landing-page/package-lock.json"
 
     - name: Build JavaDocs
       # run if 'javadocs' is not set to false 
@@ -70,7 +63,7 @@ jobs:
         rm $ARTIFACTS_DIR/objects.inv || true
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: smithy-docs
         path: ${{ env.ARTIFACTS_DIR }}
@@ -84,12 +77,12 @@ jobs:
     needs: build-docs
     steps:
     - name: Checkout GitHub pages branch
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         ref: 'gh-pages'
     - name: Download artifacts
       id: download
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: smithy-docs
         path: /tmp/smithy-docs

@@ -4,6 +4,7 @@
  */
 plugins {
     id("smithy.module-conventions")
+    id("smithy.smithy-format-conventions")
 }
 
 description = "Smithy rules engine Language and traits"
@@ -13,6 +14,7 @@ extra["moduleName"] = "software.amazon.smithy.rulesengine"
 
 dependencies {
     api(project(":smithy-model"))
+    api(project(":smithy-build"))
     api(project(":smithy-utils"))
     api(project(":smithy-jmespath"))
     api(project(":smithy-model-jmespath"))

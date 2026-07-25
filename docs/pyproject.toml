@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build >= 0.9.5, <0.10.0"]
+requires = ["uv_build >= 0.9.5, < 0.12.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -10,12 +10,12 @@ name = "smithy"
 version = "1.0.0"
 dependencies = [
     "sphinx==9.1.0",
-    "pygments==2.19.2",
-    "furo==2025.12.19",
+    "pygments==2.20.0",
+    "sphinx-book-theme==1.2.0",
 
     # Used by new docs
     "sphinx-inline-tabs==2025.12.21.14",
-    "Sphinx-Substitution-Extensions==2026.1.12",
+    "Sphinx-Substitution-Extensions==2026.6.17",
 
     "sphinx_copybutton==0.5.2",
     "sphinx-autobuild==2025.8.25",
@@ -24,8 +24,11 @@ dependencies = [
     "standard-imghdr==3.13.0",
 
     # Allows writing docs in markdown
-    "myst-parser==5.0.0"
+    "myst-parser==5.1.0"
 ]
 
 [project.entry-points."pygments.lexers"]
 smithy = "smithy.lexer:SmithyLexer"
+
+[project.entry-points."pygments.styles"]
+ember = "smithy.ember_style:EmberStyle"

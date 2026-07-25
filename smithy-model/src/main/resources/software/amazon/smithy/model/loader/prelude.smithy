@@ -7,7 +7,6 @@ $version: "2.0"
 namespace smithy.api
 
 // --- The following shapes are publicly available prelude shapes.
-
 string String
 
 blob Blob
@@ -61,13 +60,17 @@ double PrimitiveDouble
 structure Unit {}
 
 // --- Shapes below are traits and the private shapes that define them.
-
 /// Makes a shape a trait.
 @trait(
     selector: ":is(simpleType, list, map, structure, union)"
     breakingChanges: [
-        {change: "presence"}
-        {path: "/structurallyExclusive", change: "any"}
+        {
+            change: "presence"
+        }
+        {
+            path: "/structurallyExclusive"
+            change: "any"
+        }
         {
             path: "/conflicts"
             change: "update"
@@ -210,7 +213,9 @@ string AuthTraitReference
 @trait(
     selector: "structure[trait|trait]"
     breakingChanges: [
-        {change: "presence"}
+        {
+            change: "presence"
+        }
     ]
 )
 structure protocolDefinition {
@@ -239,7 +244,9 @@ string TraitShapeId
 @trait(
     selector: "structure[trait|trait]"
     breakingChanges: [
-        {change: "presence"}
+        {
+            change: "presence"
+        }
     ]
 )
 structure authDefinition {
@@ -252,7 +259,9 @@ structure authDefinition {
 @trait(
     selector: "service"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 @authDefinition
@@ -263,7 +272,9 @@ structure httpBasicAuth {}
 @trait(
     selector: "service"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 @authDefinition
@@ -274,7 +285,9 @@ structure httpDigestAuth {}
 @trait(
     selector: "service"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 @authDefinition
@@ -286,7 +299,9 @@ structure httpBearerAuth {}
 @trait(
     selector: "service"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 @authDefinition
@@ -350,6 +365,131 @@ structure TraitValidator {
     severity: Severity = "ERROR"
 }
 
+/// Defines a type for a metadata key.
+///
+/// If a matching key is defined in the model, its value will be validated
+/// according to the targeted shape.
+///
+/// The type for any metadata key MUST only be defined once.
+@trait(selector: "dataType :not([trait|input]) :not([trait|output])")
+structure metadata {
+    /// The metadata key to validate. Each key MUST only be defined once.
+    @required
+    @length(min: 1)
+    key: String
+}
+
+/// Defines named closures of shapes that consumers like code generators can
+/// reference by id.
+@private
+@metadata(key: "shapeClosures")
+list ShapeClosures {
+    member: ShapeClosure
+}
+
+/// A defined closure of shapes that consumers like code generators can
+/// reference by id.
+@private
+structure ShapeClosure {
+    /// The namespaced identifier of the closure. Used by consumers to refer
+    /// to this closure. The id follows the same format as a shape id, MUST
+    /// be unique across all closures in the model, and MUST NOT refer to a
+    /// shape that exists in the model.
+    ///
+    /// This identifier is not intended to be semantically significant. The
+    /// requirement for a namespace is intended to reduce the chance for naming
+    /// collisions, not to suggest the namespace that any generated artifacts
+    /// must be generated into.
+    @required
+    id: ClosureId
+
+    /// Namespaces whose shapes are included in the closure.
+    includeNamespaces: Namespaces = []
+
+    /// A Smithy selector whose matched shapes are included in the closure.
+    @length(min: 1)
+    includeBySelector: String
+
+    /// Disambiguates shape name conflicts in the closure. Map keys are
+    /// shape ids contained in the closure, and map values are the
+    /// disambiguated shape names (without a namespace) to use in the
+    /// context of the closure. Each given map value MUST match the
+    /// `Identifier` production used for shape ids. Renaming a shape
+    /// does not give the shape a new shape id.
+    ///
+    /// - No renamed shape name can case-insensitively match any other
+    ///   renamed shape name or the name of a non-renamed shape contained
+    ///   in the closure.
+    /// - Member shapes MAY NOT be renamed.
+    /// - Service, resource, and operation shapes MAY NOT be renamed.
+    ///   Renaming shapes is intended for incidental naming conflicts,
+    ///   not for renaming the fundamental concepts of an API.
+    /// - Shapes from other namespaces marked as private MAY be renamed.
+    /// - A rename MUST use a name that is case-sensitively different
+    ///   from the original shape id name.
+    rename: Renames = {}
+
+    /// Documentation for the shape closure in CommonMark format.
+    documentation: CommonMark
+}
+
+/// An identifier for a closure. This matches the shape id format.
+@private
+// The idRef trait is being used here to validate format.
+@idRef(failWhenMissing: false)
+string ClosureId
+
+/// A list of Smithy namespaces.
+@private
+@uniqueItems
+list Namespaces {
+    member: String
+}
+
+/// Disambiguates shape name conflicts in a closure. Map keys are
+/// shape ids contained in the closure, and map values are the
+/// disambiguated shape names (without a namespace) to use in the
+/// context of the closure. Each given map value MUST match the
+/// `Identifier` production used for shape ids. Renaming a shape
+/// does not give the shape a new shape id.
+///
+/// - No renamed shape name can case-insensitively match any other
+///   renamed shape name or the name of a non-renamed shape contained
+///   in the closure.
+/// - Member shapes MAY NOT be renamed.
+/// - Service, resource, and operation shapes MAY NOT be renamed.
+///   Renaming shapes is intended for incidental naming conflicts,
+///   not for renaming the fundamental concepts of an API.
+/// - Shapes from other namespaces marked as private MAY be renamed.
+/// - A rename MUST use a name that is case-sensitively different
+///   from the original shape id name.
+@private
+map Renames {
+    /// The id of the shape to rename.
+    @idRef(
+        failWhenMissing: true
+        selector: ":not(:is(member, service, resource, operation))"
+        errorMessage: """
+            Renames must target shapes that are in the model and must not target \
+            services, resources, operations, or members."""
+    )
+    key: String
+
+    /// The new name for the shape.
+    value: Identifier
+}
+
+/// A string containing CommonMark-formatted text.
+@private
+@externalDocumentation("CommonMark Specification": "https://commonmark.org/")
+@mediaType("text/markdown; charset=UTF-8; variant=CommonMark")
+string CommonMark
+
+/// A string matching the `Identifier` ABNF production used for shape names.
+@private
+@pattern("^(_+[a-zA-Z0-9]|[a-zA-Z])\\w*$")
+string Identifier
+
 /// Provides a structure member with a default value. When added to root
 /// level shapes, requires that every targeting structure member defines the
 /// same default value on the member or sets a default of null.
@@ -362,7 +502,9 @@ document default
 @trait(
     selector: "structure > member [trait|default]"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 structure addedDefault {}
@@ -383,7 +525,9 @@ enum HttpApiKeyLocations {
 @trait(
     selector: "operation"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 structure optionalAuth {}
@@ -426,7 +570,9 @@ structure ExampleError {
     selector: "structure"
     conflicts: [trait]
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 enum error {
@@ -438,7 +584,9 @@ enum error {
 @trait(
     selector: "structure[trait|error]"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 structure retryable {
@@ -451,7 +599,9 @@ structure retryable {
     selector: "operation"
     conflicts: [idempotent]
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 structure readonly {}
@@ -463,10 +613,28 @@ structure readonly {}
     selector: "operation"
     conflicts: [readonly]
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
-structure idempotent {}
+structure idempotent {
+    /// Describes the errors returned when the operation is called and the
+    /// resource already exists. Applicable to create lifecycle operations.
+    /// An empty list indicates the operation returns a successful response.
+    exists: IdempotentErrors
+
+    /// Describes the errors returned when the operation is called and the
+    /// resource does not exist. Applicable to delete lifecycle operations.
+    /// An empty list indicates the operation returns a successful response.
+    notFound: IdempotentErrors
+}
+
+@private
+list IdempotentErrors {
+    @idRef(selector: "[trait|error]")
+    member: String
+}
 
 /// Defines the input member of an operation that is used by the server to
 /// identify and discard replayed requests.
@@ -474,7 +642,9 @@ structure idempotent {}
     selector: "structure > :test(member > string)"
     structurallyExclusive: "member"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 @notProperty
@@ -498,7 +668,9 @@ structure internal {}
 @trait(
     selector: ":is(structure, union) > member"
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 string jsonName
@@ -509,7 +681,9 @@ string jsonName
     selector: "structure > :test(member > :test(boolean, number, string, timestamp))"
     conflicts: [xmlNamespace]
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 structure xmlAttribute {}
@@ -519,7 +693,9 @@ structure xmlAttribute {}
 @trait(
     selector: ":is(structure, union) > :test(member > :test(list, map))"
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 structure xmlFlattened {}
@@ -529,7 +705,9 @@ structure xmlFlattened {}
 @trait(
     selector: ":is(structure, union, member)"
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 @pattern("^[a-zA-Z_][a-zA-Z_0-9-]*(:[a-zA-Z_][a-zA-Z_0-9-]*)?$")
@@ -540,7 +718,9 @@ string xmlName
     selector: ":is(service, member, simpleType, list, map, structure, union)"
     conflicts: [xmlAttribute]
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 structure xmlNamespace {
@@ -567,7 +747,9 @@ structure noReplace {}
 @trait(
     selector: ":is(blob, string)"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 string mediaType
@@ -615,7 +797,9 @@ map NonEmptyStringMap {
 @trait(
     selector: "structure > :test(member[trait|required] > string)"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 @length(min: 1)
@@ -645,7 +829,9 @@ string since
     selector: ":is(blob, union)"
     structurallyExclusive: "target"
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 structure streaming {}
@@ -654,10 +840,34 @@ structure streaming {}
 @trait(
     selector: "blob[trait|streaming]"
     breakingChanges: [
-        {change: "presence"}
+        {
+            change: "presence"
+        }
     ]
 )
 structure requiresLength {}
+
+/// Indicates that the service may not respond immediately to requests for the targeted
+/// operation. This can allow services more time to prepare more detailed responses or
+/// allow them to hold the request open as it waits for information to become
+/// available.
+///
+/// When making requests for an operation targeted by this trait, clients should
+/// wait for at least the amount of time indicated by the `timeoutMillis` member.
+/// If the client's default timeout is longer, it may use the longer value.
+///
+/// Clients may allow users to configure timeouts. If a user configures a timeout
+/// value on a client, the client must use the user-configured value regardless of
+/// whether it is greater or less than `timeoutMillis`. Similarly, if the user
+/// configures a timeout value for a request, clients must use that value.
+@trait(selector: "operation")
+@unstable
+structure longPoll {
+    /// The amount of time in milliseconds that a client should wait for a response.
+    @required
+    @range(min: 1)
+    timeoutMillis: Integer
+}
 
 /// Tags a shape with arbitrary tag names that can be used to filter and
 /// group shapes in the model.
@@ -681,7 +891,9 @@ string title
     // enums, but that validation happens in code to provide better error
     // messages.
     breakingChanges: [
-        {change: "presence"}
+        {
+            change: "presence"
+        }
     ]
 )
 @length(min: 1)
@@ -765,9 +977,7 @@ string pattern
 
 /// Marks a structure member as required, meaning a value for the member MUST
 /// be present.
-@trait(
-    selector: "structure > member"
-)
+@trait(selector: "structure > member")
 structure required {}
 
 /// Configures a structure member's resource property mapping behavior.
@@ -775,8 +985,12 @@ structure required {}
     selector: "structure > member"
     conflicts: [resourceIdentifier]
     breakingChanges: [
-        {change: "remove"}
-        {change: "update"}
+        {
+            change: "remove"
+        }
+        {
+            change: "update"
+        }
     ]
 )
 structure property {
@@ -788,7 +1002,9 @@ structure property {
 @trait(
     selector: ":is(operation -[input, output]-> structure > member, [trait|trait])"
     breakingChanges: [
-        {change: "add"}
+        {
+            change: "add"
+        }
     ]
 )
 @notProperty
@@ -800,7 +1016,9 @@ structure notProperty {}
     selector: "operation -[input, output]-> structure > member :test(> structure)"
     structurallyExclusive: "member"
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 @notProperty
@@ -820,7 +1038,9 @@ structure recommended {
 @trait(
     selector: ":is(list, map)"
     breakingChanges: [
-        {change: "presence"}
+        {
+            change: "presence"
+        }
     ]
 )
 structure sparse {}
@@ -830,7 +1050,10 @@ structure sparse {}
     selector: "list :not(> member ~> :is(float, double, document))"
     conflicts: [sparse]
     breakingChanges: [
-        {change: "presence", severity: "WARNING"}
+        {
+            change: "presence"
+            severity: "WARNING"
+        }
     ]
 )
 structure uniqueItems {}
@@ -845,14 +1068,39 @@ structure unstable {}
 @trait(
     selector: ":is(service, operation)"
     breakingChanges: [
-        {change: "remove"}
-        {path: "/inputToken", change: "update"}
-        {path: "/outputToken", change: "update"}
-        {path: "/items", change: "remove"}
-        {path: "/items", change: "add", severity: "NOTE"}
-        {path: "/items", change: "update", severity: "NOTE"}
-        {path: "/pageSize", change: "update"}
-        {path: "/pageSize", change: "remove"}
+        {
+            change: "remove"
+        }
+        {
+            path: "/inputToken"
+            change: "update"
+        }
+        {
+            path: "/outputToken"
+            change: "update"
+        }
+        {
+            path: "/items"
+            change: "remove"
+        }
+        {
+            path: "/items"
+            change: "add"
+            severity: "NOTE"
+        }
+        {
+            path: "/items"
+            change: "update"
+            severity: "NOTE"
+        }
+        {
+            path: "/pageSize"
+            change: "update"
+        }
+        {
+            path: "/pageSize"
+            change: "remove"
+        }
     ]
 )
 structure paginated {
@@ -889,10 +1137,21 @@ structure paginated {
 @trait(
     selector: "operation"
     breakingChanges: [
-        {change: "remove"}
-        {path: "/method", change: "update"}
-        {path: "/uri", change: "update"}
-        {path: "/code", change: "update"}
+        {
+            change: "remove"
+        }
+        {
+            path: "/method"
+            change: "update"
+        }
+        {
+            path: "/uri"
+            change: "update"
+        }
+        {
+            path: "/code"
+            change: "update"
+        }
         {
             path: "/code"
             change: "presence"
@@ -923,7 +1182,9 @@ structure http {
     selector: "structure > member[trait|required] :test(> :test(string, number, boolean, timestamp))"
     conflicts: [httpHeader, httpQuery, httpPrefixHeaders, httpPayload, httpResponseCode, httpQueryParams]
     breakingChanges: [
-        {change: "presence"}
+        {
+            change: "presence"
+        }
     ]
 )
 structure httpLabel {}
@@ -936,7 +1197,9 @@ structure httpLabel {}
         > list > member > :test(string, number, boolean, timestamp))"""
     conflicts: [httpLabel, httpHeader, httpPrefixHeaders, httpPayload, httpResponseCode, httpQueryParams]
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 @length(min: 1)
@@ -950,7 +1213,9 @@ string httpQuery
     structurallyExclusive: "member"
     conflicts: [httpLabel, httpQuery, httpHeader, httpPayload, httpResponseCode, httpPrefixHeaders]
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 structure httpQueryParams {}
@@ -962,7 +1227,9 @@ structure httpQueryParams {}
         list > member > :test(boolean, number, string, timestamp)))"""
     conflicts: [httpLabel, httpQuery, httpPrefixHeaders, httpPayload, httpResponseCode, httpQueryParams]
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 @length(min: 1)
@@ -976,7 +1243,9 @@ string httpHeader
     structurallyExclusive: "member"
     conflicts: [httpLabel, httpQuery, httpHeader, httpPayload, httpResponseCode, httpQueryParams]
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 string httpPrefixHeaders
@@ -987,7 +1256,9 @@ string httpPrefixHeaders
     conflicts: [httpLabel, httpQuery, httpHeader, httpPrefixHeaders, httpResponseCode, httpQueryParams]
     structurallyExclusive: "member"
     breakingChanges: [
-        {change: "presence"}
+        {
+            change: "presence"
+        }
     ]
 )
 structure httpPayload {}
@@ -996,7 +1267,9 @@ structure httpPayload {}
 @trait(
     selector: "structure[trait|error]"
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 integer httpError
@@ -1009,7 +1282,9 @@ integer httpError
     structurallyExclusive: "member"
     conflicts: [httpLabel, httpQuery, httpHeader, httpPrefixHeaders, httpPayload, httpQueryParams]
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 structure httpResponseCode {}
@@ -1018,13 +1293,25 @@ structure httpResponseCode {}
 @trait(
     selector: "service"
     breakingChanges: [
-        {change: "remove"}
+        {
+            change: "remove"
+        }
     ]
 )
 structure cors {
     /// The origin from which browser script-originating requests will be
     /// allowed.
+    ///
+    /// The `origin` and `origins` members are mutually exclusive.
     origin: NonEmptyString = "*"
+
+    /// A map of named origins from which browser script-originating requests
+    /// will be allowed. Each key is a user-defined name for the origin, and
+    /// each value is the origin URL. This allows for environment-aware origin
+    /// selection (e.g., selecting an origin based on a deployment stage).
+    ///
+    /// The `origin` and `origins` members are mutually exclusive.
+    origins: NonEmptyStringMap
 
     /// The maximum number of seconds for which browsers are allowed to cache
     /// the results of a preflight OPTIONS request.
@@ -1060,7 +1347,9 @@ list NonEmptyStringList {
     conflicts: [eventHeader]
     structurallyExclusive: "member"
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 structure eventPayload {}
@@ -1072,7 +1361,9 @@ structure eventPayload {}
         :test(member > :test(boolean, byte, short, integer, long, blob, string, timestamp))"""
     conflicts: [eventPayload]
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 structure eventHeader {}
@@ -1102,7 +1393,9 @@ structure idRef {
 @trait(
     selector: ":test(timestamp, member > timestamp)"
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 enum timestampFormat {
@@ -1124,7 +1417,9 @@ enum timestampFormat {
 @trait(
     selector: "operation"
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 structure endpoint {
@@ -1141,7 +1436,9 @@ structure endpoint {
 @trait(
     selector: "structure > :test(member[trait|required] > string)"
     breakingChanges: [
-        {change: "any"}
+        {
+            change: "any"
+        }
     ]
 )
 structure hostLabel {}
@@ -1165,7 +1462,9 @@ structure httpChecksumRequired {}
     selector: "structure"
     conflicts: [output, error]
     breakingChanges: [
-        {change: "presence"}
+        {
+            change: "presence"
+        }
     ]
 )
 structure input {}
@@ -1175,7 +1474,9 @@ structure input {}
     selector: "structure"
     conflicts: [input, error]
     breakingChanges: [
-        {change: "presence"}
+        {
+            change: "presence"
+        }
     ]
 )
 structure output {}

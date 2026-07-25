@@ -25,6 +25,9 @@ tasks.sourcesJar {
 }
 
 smithy {
-    format.set(false)
     smithyBuildConfigs.set(project.files())
+}
+
+java.sourceSets["main"].java {
+    srcDirs("model", "src/main/smithy")
 }

@@ -1,5 +1,12 @@
 $version: "2.0"
 
+metadata suppressions = [
+    {
+        id: "UnstableTrait"
+        namespace: "smithy.rules.tests"
+    }
+]
+
 namespace smithy.rules.tests
 
 use smithy.rules#clientContextParams
@@ -9,7 +16,6 @@ use smithy.rules#endpointTests
 use smithy.rules#operationContextParams
 use smithy.rules#staticContextParams
 
-@suppress(["UnstableTrait"])
 @clientContextParams(
     bar: { type: "string", documentation: "a client string parameter" }
     baz: { type: "string", documentation: "another client string parameter" }
@@ -19,9 +25,24 @@ use smithy.rules#staticContextParams
     version: "1.0"
     parameters: {
         bar: { required: false, documentation: "String parameter with no default value and client binding", type: "String" }
-        baz: { required: true, default: "baz", documentation: "String parameter with default value and client binding", type: "String" }
-        booleanParam: { required: true, default: true, documentation: "Boolean parameter with default value and client binding", type: "Boolean" }
-        Endpoint: { builtIn: "SDK::Endpoint", required: false, documentation: "Override the endpoint used to send this request", type: "String" }
+        baz: {
+            required: true
+            default: "baz"
+            documentation: "String parameter with default value and client binding"
+            type: "String"
+        }
+        booleanParam: {
+            required: true
+            default: true
+            documentation: "Boolean parameter with default value and client binding"
+            type: "Boolean"
+        }
+        Endpoint: {
+            builtIn: "SDK::Endpoint"
+            required: false
+            documentation: "Override the endpoint used to send this request"
+            type: "String"
+        }
     }
     rules: [
         {
@@ -232,7 +253,6 @@ operation NoBindingsOperation {
     input := {}
 }
 
-@suppress(["UnstableTrait"])
 @staticContextParams(
     bar: { value: "static-context" }
     booleanParam: { value: false }

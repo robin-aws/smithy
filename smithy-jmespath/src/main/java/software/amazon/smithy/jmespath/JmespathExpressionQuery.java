@@ -1,0 +1,28 @@
+package software.amazon.smithy.jmespath;
+
+
+import software.amazon.smithy.jmespath.evaluation.AbstractEvaluator;
+import software.amazon.smithy.jmespath.evaluation.Evaluator;
+import software.amazon.smithy.jmespath.evaluation.FunctionRegistry;
+import software.amazon.smithy.jmespath.evaluation.JmespathAbstractRuntime;
+import software.amazon.smithy.jmespath.evaluation.JmespathRuntime;
+
+public class JmespathExpressionQuery<T> extends JmespathAbstractExpressionQuery<T> {
+
+    private final JmespathRuntime<T> runtime;
+
+    public JmespathExpressionQuery(JmespathRuntime<T> runtime, FunctionRegistry<T> functions, JmespathExpression expression) {
+        super(runtime, functions, expression);
+        this.runtime = runtime;
+    }
+
+    @Override
+    public JmespathAbstractRuntime<T> runtime() {
+        return runtime;
+    }
+
+    @Override
+    public T apply(T value) {
+        return new Evaluator<>(value, runtime, functions).visit(expression);
+    }
+}

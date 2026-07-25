@@ -7,15 +7,22 @@ package software.amazon.smithy.jmespath.evaluation;
 import java.util.List;
 import software.amazon.smithy.jmespath.JmespathException;
 import software.amazon.smithy.jmespath.JmespathExceptionType;
+import software.amazon.smithy.jmespath.RuntimeType;
 
-class ContainsFunction implements Function {
+class ContainsFunction<T> implements Function<T> {
     @Override
     public String name() {
         return "contains";
     }
 
     @Override
-    public <T> T apply(JmespathRuntime<T> runtime, List<FunctionArgument<T>> functionArguments) {
+    public T abstractApply(AbstractEvaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        return evaluator.runtime().createAny(RuntimeType.BOOLEAN);
+    }
+
+    @Override
+    public T concreteApply(Evaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        JmespathRuntime<T> runtime = evaluator.runtime();
         checkArgumentCount(2, functionArguments);
         T subject = functionArguments.get(0).expectValue();
         T search = functionArguments.get(1).expectValue();

@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.OptionalInt;
 import software.amazon.smithy.jmespath.ExpressionVisitor;
 import software.amazon.smithy.jmespath.JmespathExpression;
+import software.amazon.smithy.jmespath.type.Type;
 
 /**
  * Represents a slice expression, containing an optional zero-based
@@ -71,4 +72,9 @@ public final class SliceExpression extends JmespathExpression {
     public String toString() {
         return "SliceExpression{start=" + start + ", stop=" + stop + ", step=" + step + '}';
     }
+//
+//    @Override
+//    public Type typeCheck(Type currentType) {
+//        return currentType;
+//    }
 }

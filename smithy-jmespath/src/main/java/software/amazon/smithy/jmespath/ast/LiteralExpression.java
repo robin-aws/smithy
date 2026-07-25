@@ -14,7 +14,11 @@ import software.amazon.smithy.jmespath.ExpressionVisitor;
 import software.amazon.smithy.jmespath.JmespathException;
 import software.amazon.smithy.jmespath.JmespathExceptionType;
 import software.amazon.smithy.jmespath.JmespathExpression;
+import software.amazon.smithy.jmespath.LiteralExpressionJmespathRuntime;
 import software.amazon.smithy.jmespath.RuntimeType;
+import software.amazon.smithy.jmespath.evaluation.EvaluationUtils;
+import software.amazon.smithy.jmespath.evaluation.JmespathAbstractRuntime;
+import software.amazon.smithy.jmespath.evaluation.JmespathRuntime;
 
 /**
  * Represents a literal value.
@@ -350,5 +354,12 @@ public final class LiteralExpression extends JmespathExpression {
             default:
                 return false;
         }
+    }
+
+    public <T> T convert(JmespathAbstractRuntime<T> runtime) {
+        if (value instanceof LiteralValue) {
+            return ((LiteralValue<?>)value).convert(runtime);
+        }
+        return EvaluationUtils.convert(LiteralExpressionJmespathRuntime.INSTANCE, this, runtime);
     }
 }

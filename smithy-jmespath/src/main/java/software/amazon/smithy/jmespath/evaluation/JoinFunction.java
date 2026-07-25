@@ -4,16 +4,24 @@
  */
 package software.amazon.smithy.jmespath.evaluation;
 
+import software.amazon.smithy.jmespath.RuntimeType;
+
 import java.util.List;
 
-class JoinFunction implements Function {
+class JoinFunction<T> implements Function<T> {
     @Override
     public String name() {
         return "join";
     }
 
     @Override
-    public <T> T apply(JmespathRuntime<T> runtime, List<FunctionArgument<T>> functionArguments) {
+    public T abstractApply(AbstractEvaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        return evaluator.runtime().createAny(RuntimeType.STRING);
+    }
+
+    @Override
+    public T concreteApply(Evaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        JmespathRuntime<T> runtime = evaluator.runtime();
         checkArgumentCount(2, functionArguments);
         String separator = runtime.asString(functionArguments.get(0).expectString());
         T array = functionArguments.get(1).expectArray();

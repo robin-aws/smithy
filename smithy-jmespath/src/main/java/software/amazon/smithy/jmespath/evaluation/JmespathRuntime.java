@@ -6,9 +6,16 @@ package software.amazon.smithy.jmespath.evaluation;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.function.BiFunction;
+
 import software.amazon.smithy.jmespath.JmespathException;
 import software.amazon.smithy.jmespath.JmespathExceptionType;
+import software.amazon.smithy.jmespath.JmespathExpression;
 import software.amazon.smithy.jmespath.RuntimeType;
+import software.amazon.smithy.jmespath.ast.FunctionExpression;
+import software.amazon.smithy.jmespath.ast.ResolvedFunctionExpression;
+import software.amazon.smithy.jmespath.type.Type;
 
 /**
  * An interface to provide the operations needed for JMESPath expression evaluation
@@ -22,7 +29,7 @@ import software.amazon.smithy.jmespath.RuntimeType;
  * refer to T value where typeOf(value) returns RuntimeType.NULL.
  * A runtime may or may not use a Java `null` value for this purpose.
  */
-public interface JmespathRuntime<T> extends Comparator<T> {
+public interface JmespathRuntime<T> extends JmespathAbstractRuntime<T>, Comparator<T> {
 
     ///////////////////////////////
     // General Operations
@@ -35,11 +42,21 @@ public interface JmespathRuntime<T> extends Comparator<T> {
      */
     RuntimeType typeOf(T value);
 
+    @Override
+    default T abstractTypeOf(T value) {
+        return createString(typeOf(value).toString());
+    }
+
     /**
      * Shorthand for {@code typeOf(value).equals(type)}.
      */
     default boolean is(T value, RuntimeType type) {
         return typeOf(value).equals(type);
+    }
+
+    @Override
+    default T abstractIs(T value, RuntimeType type) {
+        return abstractEqual(abstractTypeOf(value), createString(type.toString()));
     }
 
     /**
@@ -81,6 +98,11 @@ public interface JmespathRuntime<T> extends Comparator<T> {
     }
 
     @Override
+    default T abstractEqual(T a, T b) {
+        return createBoolean(equal(a, b));
+    }
+
+    @Override
     default int compare(T a, T b) {
         if (is(a, RuntimeType.STRING) && is(b, RuntimeType.STRING)) {
             return asString(a).compareTo(asString(b));
@@ -89,6 +111,20 @@ public interface JmespathRuntime<T> extends Comparator<T> {
         } else {
             throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
         }
+    }
+
+    default T abstractLessThan(T a, T b) {
+        return createBoolean(compare(a, b) < 0);
+    }
+
+    @Override
+    default T createAny(RuntimeType runtimeType) {
+        throw new UnsupportedOperationException("anyValue called on concrete runtime");
+    }
+
+    @Override
+    default T either(T left, T right) {
+        throw new UnsupportedOperationException("either called on concrete runtime");
     }
 
     /**
@@ -144,25 +180,13 @@ public interface JmespathRuntime<T> extends Comparator<T> {
         }
     }
 
-    ///////////////////////////////
-    // NULLs
-    ///////////////////////////////
-
-    /**
-     * Returns `null`.
-     * <p>
-     * Runtimes may or may not use a Java null value to represent a JSON null value.
-     */
-    T createNull();
+    default T abstractToString(T value) {
+        return createString(toString(value));
+    }
 
     ///////////////////////////////
     // BOOLEANs
     ///////////////////////////////
-
-    /**
-     * Creates a BOOLEAN value.
-     */
-    T createBoolean(boolean b);
 
     /**
      * If the given value is a BOOLEAN, return it as a boolean.
@@ -173,11 +197,6 @@ public interface JmespathRuntime<T> extends Comparator<T> {
     ///////////////////////////////
     // STRINGs
     ///////////////////////////////
-
-    /**
-     * Creates a STRING value.
-     */
-    T createString(String string);
 
     /**
      * If the given value is a STRING, return it as a String.
@@ -191,11 +210,6 @@ public interface JmespathRuntime<T> extends Comparator<T> {
     ///////////////////////////////
     // NUMBERs
     ///////////////////////////////
-
-    /**
-     * Creates a NUMBER value.
-     */
-    T createNumber(Number value);
 
     /**
      * Returns the type of Number that asNumber() will produce for this value.
@@ -213,39 +227,14 @@ public interface JmespathRuntime<T> extends Comparator<T> {
     // ARRAYs
     ///////////////////////////////
 
-    /**
-     * Creates a new ArrayBuilder.
-     */
-    ArrayBuilder<T> arrayBuilder();
-
-    /**
-     * A builder interface for new ARRAY values.
-     */
-    interface ArrayBuilder<T> {
-
-        /**
-         * Adds the given value to the array being built.
-         */
-        void add(T value);
-
-        /**
-         * If the given value is an ARRAY, adds all the elements of the array.
-         * If the given value is an OBJECT, adds all the keys of the object.
-         * Otherwise, throws a JmespathException of type INVALID_TYPE.
-         */
-        void addAll(T collection);
-
-        /**
-         * Builds the new ARRAY value being built.
-         */
-        T build();
+    @Override
+    default T abstractElement(T array, T index) {
+        if (is(index, RuntimeType.NUMBER)) {
+            return element(array, asNumber(index).intValue());
+        } else {
+            return createError(JmespathExceptionType.INVALID_TYPE, "Expected number");
+        }
     }
-
-    /**
-     * If the given value is an ARRAY, returns the element at the given index.
-     * Otherwise, throws a JmespathException of type INVALID_TYPE.
-     */
-    T element(T array, int index);
 
     /**
      * If the given value is an ARRAY, returns the specified slice.
@@ -280,43 +269,6 @@ public interface JmespathRuntime<T> extends Comparator<T> {
     }
 
     ///////////////////////////////
-    // OBJECTs
-    ///////////////////////////////
-
-    /**
-     * Creates a new ObjectBuilder.
-     */
-    ObjectBuilder<T> objectBuilder();
-
-    /**
-     * A builder interface for new OBJECT values.
-     */
-    interface ObjectBuilder<T> {
-
-        /**
-         * Adds the given key/value pair to the object being built.
-         */
-        void put(T key, T value);
-
-        /**
-         * If the given value is an OBJECT, adds all of its key/value pairs.
-         * Otherwise, throws a JmespathException of type INVALID_TYPE.
-         */
-        void putAll(T object);
-
-        /**
-         * Builds the new OBJECT value being built.
-         */
-        T build();
-    }
-
-    /**
-     * If the given value is an OBJECT, returns the value mapped to the given key.
-     * Otherwise, returns NULL.
-     */
-    T value(T object, T key);
-
-    ///////////////////////////////
     // Common collection operations for ARRAYs and OBJECTs
     ///////////////////////////////
 
@@ -326,9 +278,45 @@ public interface JmespathRuntime<T> extends Comparator<T> {
      */
     int length(T value);
 
+    default T abstractLength(T value) {
+        if (is(value, RuntimeType.ARRAY) || is(value, RuntimeType.OBJECT) || is(value, RuntimeType.STRING)) {
+            return createNumber(length(value));
+        } else {
+            return createNull();
+        }
+    }
+
     /**
      * Iterate over the elements of an ARRAY or the keys of an OBJECT.
      * Otherwise, throws a JmespathException of type INVALID_TYPE.
      */
     Iterable<? extends T> asIterable(T value);
+
+    ///////////////////////////////
+    // Functions
+    ///////////////////////////////
+
+    @Override
+    default FunctionArgument<T> createFunctionArgument(T value) {
+        return FunctionArgument.of(this, value);
+    }
+
+    @Override
+    default FunctionArgument<T> createFunctionArgument(JmespathExpression expression) {
+        return FunctionArgument.of(this, expression);
+    }
+
+    ///////////////////////////////
+    // Errors
+    ///////////////////////////////
+
+    @Override
+    default T createError(JmespathExceptionType type, String message) {
+        throw new JmespathException(type, message);
+    }
+
+    @Override
+    default T createExpression(JmespathExpression expression) {
+        throw new UnsupportedOperationException("createExpression");
+    }
 }

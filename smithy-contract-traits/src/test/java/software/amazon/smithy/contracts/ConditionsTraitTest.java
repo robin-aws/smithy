@@ -35,6 +35,14 @@ public class ConditionsTraitTest {
         assertThat(trait.getConditions().size(), equalTo(1));
         condition = trait.getConditions().get("NoKeywords");
         assertThat(condition.getExpression(), isA(AndExpression.class));
+
+        // @conditions is also allowed on operations, where expressions reference
+        // the {input, output, error, before, after} instance tuple.
+        shape = result.expectShape(ShapeId.from("smithy.example#FetchLogs"));
+        trait = shape.expectTrait(ConditionsTrait.class);
+        assertThat(trait.getConditions().size(), equalTo(1));
+        condition = trait.getConditions().get("StartBeforeEnd");
+        assertThat(condition.getExpression(), isA(ComparatorExpression.class));
     }
 
 }

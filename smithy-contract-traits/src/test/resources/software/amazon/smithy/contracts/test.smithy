@@ -8,6 +8,12 @@ service LogFetcher {
     operations: [FetchLogs]
 }
 
+@conditions({
+    StartBeforeEnd: {
+        documentation: "The requested start time must be strictly less than the end time",
+        expression: "input.start < input.end"
+    }
+})
 operation FetchLogs {
     input: FetchLogsInput
 }

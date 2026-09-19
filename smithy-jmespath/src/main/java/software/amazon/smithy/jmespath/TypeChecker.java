@@ -87,6 +87,7 @@ final class TypeChecker implements ExpressionVisitor<LiteralExpression> {
         FUNCTIONS.put("not_null", new FunctionDefinition(ANY, Collections.singletonList(isAny), isAny));
         FUNCTIONS.put("reverse", new FunctionDefinition(ARRAY, oneOf(RuntimeType.ARRAY, RuntimeType.STRING)));
         FUNCTIONS.put("requires", new FunctionDefinition(BOOLEAN, isAny, isAny));
+        FUNCTIONS.put("resource", new FunctionDefinition(ANY, isAny, isAny));
         FUNCTIONS.put("sort", new FunctionDefinition(ARRAY, isArray));
         FUNCTIONS.put("sort_by", new FunctionDefinition(ARRAY, isArray, isType(RuntimeType.EXPRESSION)));
         FUNCTIONS.put("starts_with", new FunctionDefinition(BOOLEAN, isString, isString));

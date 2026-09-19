@@ -36,6 +36,7 @@ final class FunctionRegistry {
         registerFunction(new NotNullFunction());
         registerFunction(new ReverseFunction());
         registerFunction(new RequiresFunction());
+        registerFunction(new ResourceFunction());
         registerFunction(new SortFunction());
         registerFunction(new SortByFunction());
         registerFunction(new StartsWithFunction());

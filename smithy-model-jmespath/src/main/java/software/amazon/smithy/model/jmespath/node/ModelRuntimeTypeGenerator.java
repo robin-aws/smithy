@@ -40,6 +40,7 @@ import software.amazon.smithy.model.shapes.TimestampShape;
 import software.amazon.smithy.model.shapes.UnionShape;
 import software.amazon.smithy.model.traits.LengthTrait;
 import software.amazon.smithy.model.traits.RangeTrait;
+import software.amazon.smithy.model.traits.ReferencesTrait;
 
 /**
  * Generates fake data from a modeled shape for static JMESPath analysis.
@@ -205,7 +206,9 @@ final class ModelRuntimeTypeGenerator implements ShapeVisitor<Object> {
         // operation reference these members rather than a bare shape value.
         return withCopiedVisitors(() -> {
             Map<String, Object> result = new LinkedHashMap<>();
-            result.put("input", sampleForShapeId(shape.getInputShape()));
+            Object inputSample = sampleForShapeId(shape.getInputShape());
+            addReferenceHandleTypes(shape.getInputShape(), inputSample);
+            result.put("input", inputSample);
             result.put("output", sampleForShapeId(shape.getOutputShape()));
             // error, before, and after are coarsely typed for now. Precise typing of
             // the error union and the before/after world snapshots is a later refinement.
@@ -214,6 +217,23 @@ final class ModelRuntimeTypeGenerator implements ShapeVisitor<Object> {
             result.put("after", LiteralExpression.ANY);
             return result;
         });
+    }
+
+    // Reference-handle projections (input.<name>) are ghost state, coarsely typed as
+    // any until the dependent handle type lands with the type system.
+    @SuppressWarnings("unchecked")
+    private void addReferenceHandleTypes(ShapeId structureId, Object sample) {
+        if (!(sample instanceof Map)) {
+            return;
+        }
+        model.getShape(structureId)
+                .flatMap(shape -> shape.getTrait(ReferencesTrait.class))
+                .ifPresent(trait -> {
+                    for (ReferencesTrait.Reference reference : trait.getReferences()) {
+                        reference.getName()
+                                .ifPresent(name -> ((Map<String, Object>) sample).put(name, LiteralExpression.ANY));
+                    }
+                });
     }
 
     private Object sampleForShapeId(ShapeId target) {

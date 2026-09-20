@@ -49,6 +49,7 @@ import software.amazon.smithy.model.shapes.StringShape;
 import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.shapes.TimestampShape;
 import software.amazon.smithy.model.shapes.UnionShape;
+import software.amazon.smithy.model.traits.ReferencesTrait;
 import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
 import software.amazon.smithy.model.validation.node.TimestampValidationStrategy;
 import software.amazon.smithy.utils.ListUtils;
@@ -474,9 +475,11 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
             }
         }
 
-        model.getShape(shape.getInputShape()).ifPresent(input -> {
+        model.getShape(shape.getInputShape()).ifPresent(inputShape -> {
             Node inputValue = object.getMember("input").orElse(Node.objectNode());
-            events.addAll(input.accept(traverse("input", inputValue)));
+            // Reference-handle projections (input.<name>) are ghost state, not real
+            // structure members, so strip them before validating the input structurally.
+            events.addAll(inputShape.accept(traverse("input", stripReferenceHandles(inputShape, inputValue))));
         });
 
         boolean hasOutput = object.getMember("output").filter(node -> !node.isNullNode()).isPresent();
@@ -545,6 +548,28 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
             }
         }
         return true;
+    }
+
+    // Removes members whose names match a declared @references name on the shape.
+    // Those are ghost handle projections, not structural members of the input.
+    private Node stripReferenceHandles(Shape inputShape, Node inputValue) {
+        if (!inputValue.isObjectNode() || !inputShape.hasTrait(ReferencesTrait.class)) {
+            return inputValue;
+        }
+        Set<String> names = new HashSet<>();
+        for (ReferencesTrait.Reference reference : inputShape.expectTrait(ReferencesTrait.class).getReferences()) {
+            reference.getName().ifPresent(names::add);
+        }
+        if (names.isEmpty()) {
+            return inputValue;
+        }
+        ObjectNode.Builder builder = Node.objectNodeBuilder();
+        for (Map.Entry<String, Node> entry : inputValue.expectObjectNode().getStringMap().entrySet()) {
+            if (!names.contains(entry.getKey())) {
+                builder.withMember(entry.getKey(), entry.getValue());
+            }
+        }
+        return builder.build();
     }
 
     @Override

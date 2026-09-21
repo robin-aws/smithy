@@ -2,7 +2,7 @@ $version: "2"
 
 namespace smithy.example
 
-use smithy.contracts#conditions
+use smithy.contracts#contracts
 
 service Crypto {
     operations: [Encrypt]
@@ -13,7 +13,7 @@ resource Key {
     identifiers: {keyId: String}
 }
 
-@conditions({
+@contracts({
     KeyEnabledOnSuccess: {
         documentation: "A successful Encrypt requires the referenced key to have been ENABLED beforehand"
         expression: "requires(@, resource(before, input.key).keyState == 'ENABLED')"

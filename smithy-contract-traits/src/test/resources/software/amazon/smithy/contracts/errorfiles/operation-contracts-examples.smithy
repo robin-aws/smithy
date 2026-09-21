@@ -2,9 +2,9 @@ $version: "2"
 
 namespace smithy.example
 
-use smithy.contracts#conditions
+use smithy.contracts#contracts
 
-@conditions({
+@contracts({
     StartBeforeEnd: {
         documentation: "The requested start time must be strictly less than the end time"
         expression: "input.start < input.end"

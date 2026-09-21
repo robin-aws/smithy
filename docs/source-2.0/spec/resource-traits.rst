@@ -266,13 +266,10 @@ the following members:
         this value SHOULD contain either a `standard link relation`_ or URI).
     * - name
       - ``string``
-      - An optional name for the reference. When set, the reference is projected
-        as a resource handle reachable from a JMESPath expression as
-        ``input.<name>`` (or ``output.<name>``), so that operation
-        :ref:`conditions <conditions-trait>` can pass it to ``resource(...)``.
-        The handle is ghost state: it is a specification-only pointer
-        synthesized from the observable identifier members and is never part of
-        the wire data. The name MUST NOT collide with a member of the structure.
+      - An optional name that identifies the reference. Tooling MAY use the name
+        to refer to this specific reference, for example to project it into an
+        expression language (see the :ref:`jmespath-data-model`). The name MUST
+        NOT collide with a member of the structure.
 
 Runtime resolution of references
 --------------------------------

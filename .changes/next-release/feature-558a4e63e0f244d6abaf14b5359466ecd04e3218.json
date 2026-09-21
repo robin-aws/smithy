@@ -1,6 +1,6 @@
 {
   "type": "feature",
-  "description": "Expanded the `@conditions` contract trait to apply to operations, validated against the `{input, output, error, before, after}` operation instance. Added optional `before` and `after` members to the `@examples` trait and an optional `name` member to `@references` (projecting a resource handle), plus the `requires` and `resource` JMESPath built-in functions for expressing operation contracts over ghost resource state.",
+  "description": "Expanded the `@conditions` contract trait to apply to operations, validated against the `{input, output, error, before, after}` operation instance. Added optional `before` and `after` members to the `@examples` trait and an optional `name` member to `@references` (projecting a resource handle), plus the `requires` and `resource` JMESPath built-in functions for expressing operation contracts over model-only resource state.",
   "pull_requests": [
     "[#8](https://github.com/robin-aws/smithy/pull/8)"
   ]

@@ -83,38 +83,13 @@ See the :ref:`JMESPath data model <waiter-jmespath-data-model>` for details on h
 Applying ``conditions`` to operations
 -------------------------------------
 
-The ``conditions`` trait MAY be applied to an operation. An operation condition
-is not evaluated against a single shape value but against the tuple of a single
-call, exposed as an object with the following members:
+The ``conditions`` trait MAY be applied to an operation. An operation is not
+evaluated against a single shape value but against its *instance*, the
+``{input, output, error, before, after}`` tuple of a single call. See the
+:ref:`jmespath-data-model` for how that instance is exposed to JMESPath and for
+the distinction between observable and model-only members.
 
-.. list-table::
-    :header-rows: 1
-    :widths: 12 28 60
-
-    * - Member
-      - Value
-      - Description
-    * - input
-      - operation input
-      - The input provided to the call.
-    * - output
-      - operation output
-      - The output returned by a successful call. Absent on failure.
-    * - error
-      - ``{shapeId, content}``
-      - The modeled error returned by a failed call, as an object carrying the
-        error's ``shapeId`` and its ``content``. Absent on success. ``output``
-        and ``error`` are mutually exclusive.
-    * - before
-      - world snapshot
-      - A snapshot of resource state before the call. This is *ghost state*
-        (see below).
-    * - after
-      - world snapshot
-      - A snapshot of resource state after the call. This is *ghost state*
-        (see below).
-
-Expressions on an operation therefore reference these members, for example
+Expressions on an operation reference the instance members, for example
 ``input.start < input.end``:
 
 .. code-block:: smithy
@@ -129,23 +104,10 @@ Expressions on an operation therefore reference these members, for example
         input: FetchLogsInput
     }
 
-An operation instance can be materialized from an :ref:`examples-trait` value,
-which is how operation conditions are checked at build time. The ``before`` and
+An operation instance is materialized from an :ref:`examples-trait` value, which
+is how operation conditions are checked at build time. The ``before`` and
 ``after`` snapshots are supplied through the ``before`` and ``after`` members of
 the example.
-
-Observable and ghost state
---------------------------
-
-The ``input``, ``output``, and ``error`` members are *observable*: they are the
-data a client actually sends and receives. The ``before`` and ``after``
-snapshots are *ghost state*: specification-only values that describe resource
-state for the purpose of reasoning, and are never present on the wire. A
-resource handle projected from a named :ref:`references-trait` (see below) is
-likewise ghost, because it is a pointer into a snapshot rather than wire data;
-the identifiers inside it are observable, but the handle itself is not. Traits
-that are evaluated at runtime, such as waiters, may reference only the
-observable members. Ghost state is available only to validation-time contracts.
 
 ------------------
 Contract functions

@@ -235,9 +235,14 @@ the following members:
       - Description
     * - service
       - :ref:`shape-id`
-      - The absolute shape ID of the service to which the resource is bound.
-        As with the ``resource`` property, the provided shape ID is not
-        required to be resolvable at build time.
+      - The absolute shape ID of the service that provides the referenced
+        resource. When omitted, the reference is to the *current service
+        instance*, that is, the instance handling the call ("this service").
+        When specified, it refers to the only or default instance of that
+        service shape; selecting a specific non-default instance (for example a
+        particular region) requires an explicit identifier such as an ARN. As
+        with the ``resource`` property, the provided shape ID is not required to
+        be resolvable at build time.
     * - resource
       - :ref:`shape-id`
       - **Required**. The absolute shape ID of the referenced resource.

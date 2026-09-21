@@ -845,7 +845,9 @@ A *world snapshot*, used for the ``before`` and ``after`` members of an
 operation instance, maps each service shape to the set of that service's
 instances (an array, since a service can have multiple instances such as one
 per region). The full set is required so that cross-service and cross-instance
-references, such as ARNs, can be resolved.
+references, such as ARNs, can be resolved. A :ref:`reference <references-trait>`
+without a ``service`` resolves against the current service instance; with a
+``service`` it resolves against that shape's only or default instance.
 
 .. important::
 

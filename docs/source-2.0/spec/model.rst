@@ -836,14 +836,16 @@ valid instances of a shape of that type.
         identifiers and properties, representing its state.
     * - service
       - object
-      - A service instance is the state of a single service: an object mapping
-        each resource contained in the service to an array of instances of that
-        resource.
+      - A service instance is the state of a single instance of a service (a
+        service can have more than one instance, for example one per region): an
+        object mapping each resource contained in the service to an array of
+        instances of that resource.
 
 A *world snapshot*, used for the ``before`` and ``after`` members of an
-operation instance, is the set of service instances: an object mapping each
-service to its instance. The full set of services is required so that
-cross-service references, such as ARNs, can be resolved.
+operation instance, maps each service shape to the set of that service's
+instances (an array, since a service can have multiple instances such as one
+per region). The full set is required so that cross-service and cross-instance
+references, such as ARNs, can be resolved.
 
 .. important::
 

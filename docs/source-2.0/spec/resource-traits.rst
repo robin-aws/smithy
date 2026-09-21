@@ -264,6 +264,15 @@ the following members:
       - Defines the semantics of the relationship. The ``rel`` property SHOULD
         contain a link relation as defined in :rfc:`5988#section-4` (i.e.,
         this value SHOULD contain either a `standard link relation`_ or URI).
+    * - name
+      - ``string``
+      - An optional name for the reference. When set, the reference is projected
+        as a resource handle reachable from a JMESPath expression as
+        ``input.<name>`` (or ``output.<name>``), so that operation
+        :ref:`conditions <conditions-trait>` can pass it to ``resource(...)``.
+        The handle is ghost state: it is a specification-only pointer
+        synthesized from the observable identifier members and is never part of
+        the wire data. The name MUST NOT collide with a member of the structure.
 
 Runtime resolution of references
 --------------------------------

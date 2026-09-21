@@ -29,9 +29,9 @@ Services will usually check these contracts outside of service frameworks in mor
 Summary
     Restricts shape values to those which satisfy the given JMESPath expressions.
 Trait selector
-    ``:not(:test(service, operation, resource))``
+    ``:not(:test(service, resource))``
 
-    *Any shape other than services, operations, and resources*
+    *Any shape other than services and resources*
 Value type
     ``map``
 
@@ -77,6 +77,126 @@ See the :ref:`JMESPath data model <waiter-jmespath-data-model>` for details on h
         }
     })
     string Name
+
+
+-------------------------------------
+Applying ``conditions`` to operations
+-------------------------------------
+
+The ``conditions`` trait MAY be applied to an operation. An operation condition
+is not evaluated against a single shape value but against the tuple of a single
+call, exposed as an object with the following members:
+
+.. list-table::
+    :header-rows: 1
+    :widths: 12 28 60
+
+    * - Member
+      - Value
+      - Description
+    * - input
+      - operation input
+      - The input provided to the call.
+    * - output
+      - operation output
+      - The output returned by a successful call. Absent on failure.
+    * - error
+      - ``{shapeId, content}``
+      - The modeled error returned by a failed call, as an object carrying the
+        error's ``shapeId`` and its ``content``. Absent on success. ``output``
+        and ``error`` are mutually exclusive.
+    * - before
+      - world snapshot
+      - A snapshot of resource state before the call. This is *ghost state*
+        (see below).
+    * - after
+      - world snapshot
+      - A snapshot of resource state after the call. This is *ghost state*
+        (see below).
+
+Expressions on an operation therefore reference these members, for example
+``input.start < input.end``:
+
+.. code-block:: smithy
+
+    @conditions({
+        StartBeforeEnd: {
+            documentation: "The requested start time must be strictly less than the end time"
+            expression: "input.start < input.end"
+        }
+    })
+    operation FetchLogs {
+        input: FetchLogsInput
+    }
+
+An operation instance can be materialized from an :ref:`examples-trait` value,
+which is how operation conditions are checked at build time. The ``before`` and
+``after`` snapshots are supplied through the ``before`` and ``after`` members of
+the example.
+
+Observable and ghost state
+--------------------------
+
+The ``input``, ``output``, and ``error`` members are *observable*: they are the
+data a client actually sends and receives. The ``before`` and ``after``
+snapshots are *ghost state*: specification-only values that describe resource
+state for the purpose of reasoning, and are never present on the wire. A
+resource handle projected from a named :ref:`references-trait` (see below) is
+likewise ghost, because it is a pointer into a snapshot rather than wire data;
+the identifiers inside it are observable, but the handle itself is not. Traits
+that are evaluated at runtime, such as waiters, may reference only the
+observable members. Ghost state is available only to validation-time contracts.
+
+------------------
+Contract functions
+------------------
+
+In addition to the built-in JMESPath_ functions, the following functions are
+available in ``conditions`` expressions:
+
+.. list-table::
+    :header-rows: 1
+    :widths: 26 74
+
+    * - Function
+      - Description
+    * - ``requires(instance, predicate)``
+      - Declares a necessary precondition. On a successful instance (its
+        ``error`` is null), ``predicate`` MUST be truthy; on a failure instance
+        the requirement is vacuously satisfied. ``predicate`` is evaluated
+        eagerly, because a necessary precondition reads only pre-call state that
+        is present on both the success and failure paths.
+    * - ``resource(world, handle)``
+      - Looks up a single resource instance in a ``before`` or ``after`` world
+        snapshot and returns it, or null when none matches. The ``handle`` is an
+        object ``{service, resource, ids}`` (``service`` optional) where ``ids``
+        maps each resource identifier name to its value.
+
+A named :ref:`references-trait` on the input structure projects a resource
+handle reachable as ``input.<name>``, so a precondition over resource state can
+be written directly:
+
+.. code-block:: smithy
+
+    @conditions({
+        KeyEnabledOnSuccess: {
+            documentation: "A successful call requires the referenced key to be ENABLED beforehand"
+            expression: "requires(@, resource(before, input.key).keyState == 'ENABLED')"
+        }
+    })
+    operation Encrypt {
+        input: EncryptInput
+        output: EncryptOutput
+    }
+
+    @input
+    @references([
+        {resource: Key, name: "key", ids: {keyId: "keyId"}}
+    ])
+    structure EncryptInput {
+        @required
+        keyId: String
+    }
 
 
 .. _CommonMark: https://spec.commonmark.org/

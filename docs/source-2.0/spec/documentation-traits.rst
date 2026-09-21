@@ -139,6 +139,16 @@ Each ``example`` trait value is a structure with the following members:
       - :ref:`examples-ErrorExample-structure`
       - Provides an error shape ID and example error parameters for the
         operation.
+    * - before
+      - ``document``
+      - A snapshot of resource state before the call, used to evaluate operation
+        :ref:`conditions <conditions-trait>`. This is ghost state: it is
+        specification-only and is never part of the wire data.
+    * - after
+      - ``document``
+      - A snapshot of resource state after the call, used to evaluate operation
+        :ref:`conditions <conditions-trait>`. This is ghost state: it is
+        specification-only and is never part of the wire data.
     * - allowConstraintErrors
       - ``boolean``
       - Set to true to lower input constraint trait validations to warnings.

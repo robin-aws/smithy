@@ -828,19 +828,22 @@ valid instances of a shape of that type.
         failed call instead sets ``error`` to an object with a ``shapeId`` that
         names one of the operation's errors and a ``content`` instance of that
         error shape. ``output`` and ``error`` MUST NOT both be present.
-        ``before`` and ``after`` are *world snapshots* (see the ``service`` row)
-        that capture resource state before and after the call and are not sent
-        over the wire.
+        ``before`` and ``after`` are *world snapshots* (see below) that capture
+        resource state before and after the call, and are not sent over the wire.
     * - resource
       - object
       - A resource instance is an object whose members are the resource's
         identifiers and properties, representing its state.
     * - service
       - object
-      - A service instance is a *world snapshot*: an object that maps each
-        resource contained in the service to an array of instances of that
-        resource. When more than one service is in scope, a snapshot MAY instead
-        map each service's name to that service's instance.
+      - A service instance is the state of a single service: an object mapping
+        each resource contained in the service to an array of instances of that
+        resource.
+
+A *world snapshot*, used for the ``before`` and ``after`` members of an
+operation instance, is the set of service instances: an object mapping each
+service to its instance. The full set of services is required so that
+cross-service references, such as ARNs, can be resolved.
 
 .. important::
 

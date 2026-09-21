@@ -6,22 +6,28 @@ package software.amazon.smithy.model.validation.validators;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.Map;
 import software.amazon.smithy.model.Model;
-import software.amazon.smithy.model.knowledge.TopDownIndex;
+import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.shapes.OperationShape;
-import software.amazon.smithy.model.shapes.ServiceShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.traits.ExamplesTrait;
+import software.amazon.smithy.model.traits.ReferencesTrait;
 import software.amazon.smithy.model.validation.AbstractValidator;
 import software.amazon.smithy.model.validation.NodeValidationVisitor;
 import software.amazon.smithy.model.validation.ValidationEvent;
 
 /**
  * Validates that examples traits are valid for their operations.
+ *
+ * <p>Each example is assembled into the operation's
+ * {@code {input, output, error, before, after}} instance node and validated
+ * against the operation shape. All structural checks (input/output/error
+ * validation, output-XOR-error, and error binding) live in
+ * {@link NodeValidationVisitor} so that operation {@code @conditions} are
+ * evaluated against the same instance node.
  */
 public final class ExamplesTraitValidator extends AbstractValidator {
 
@@ -37,107 +43,78 @@ public final class ExamplesTraitValidator extends AbstractValidator {
 
     private List<ValidationEvent> validateExamples(Model model, OperationShape shape, ExamplesTrait trait) {
         List<ValidationEvent> events = new ArrayList<>();
-        List<ExamplesTrait.Example> examples = trait.getExamples();
 
-        for (ExamplesTrait.Example example : examples) {
-            boolean isOutputDefined = example.getOutput().isPresent();
-            boolean isErrorDefined = example.getError().isPresent();
-
-            model.getShape(shape.getInputShape()).ifPresent(input -> {
-                NodeValidationVisitor validator;
-                if (example.getAllowConstraintErrors() && !isErrorDefined) {
-                    events.add(error(shape,
-                            trait,
-                            String.format(
-                                    "Example: `%s` has allowConstraintErrors enabled, so error must be defined.",
-                                    example.getTitle())));
-                }
-                validator = createVisitor("input", example.getInput(), model, shape, example);
-                List<ValidationEvent> inputValidationEvents = input.accept(validator);
-                events.addAll(inputValidationEvents);
-            });
-
-            if (isOutputDefined && isErrorDefined) {
+        for (ExamplesTrait.Example example : trait.getExamples()) {
+            // allowConstraintErrors only makes sense when the example demonstrates an error.
+            if (example.getAllowConstraintErrors() && !example.getError().isPresent()) {
                 events.add(error(shape,
                         trait,
                         String.format(
-                                "Example: `%s` has both output and error defined, only one should be present.",
+                                "Example: `%s` has allowConstraintErrors enabled, so error must be defined.",
                                 example.getTitle())));
-            } else if (isOutputDefined) {
-                model.getShape(shape.getOutputShape()).ifPresent(output -> {
-                    NodeValidationVisitor validator = createVisitor(
-                            "output",
-                            example.getOutput().get(),
-                            model,
-                            shape,
-                            example);
-                    events.addAll(output.accept(validator));
-                });
-            } else if (isErrorDefined) {
-                ExamplesTrait.ErrorExample errorExample = example.getError().get();
-                Optional<Shape> errorShape = model.getShape(errorExample.getShapeId());
-                if (errorShape.isPresent() && (
-                // The error is directly bound to the operation.
-                shape.getErrorsSet().contains(errorExample.getShapeId())
-                        // The error is bound to all services that contain the operation.
-                        || servicesContainError(model, shape, errorExample.getShapeId()))) {
-                    NodeValidationVisitor validator = createVisitor(
-                            "error",
-                            errorExample.getContent(),
-                            model,
-                            shape,
-                            example);
-                    events.addAll(errorShape.get().accept(validator));
-                } else {
-                    events.add(error(shape,
-                            trait,
-                            String.format(
-                                    "Error parameters provided for operation without the `%s` error: `%s`",
-                                    errorExample.getShapeId(),
-                                    example.getTitle())));
-                }
             }
+
+            ObjectNode instance = buildInstanceNode(model, shape, example);
+            events.addAll(shape.accept(createVisitor(instance, model, shape, example)));
         }
 
         return events;
     }
 
-    private boolean servicesContainError(Model model, OperationShape shape, ShapeId errorId) {
-        TopDownIndex topDownIndex = TopDownIndex.of(model);
+    // Assembles the {input, output, error, before, after} instance node for an example.
+    private ObjectNode buildInstanceNode(Model model, OperationShape shape, ExamplesTrait.Example example) {
+        ObjectNode input = withReferenceHandles(model, shape.getInputShape(), example.getInput());
+        ObjectNode.Builder builder = Node.objectNodeBuilder().withMember("input", input);
+        example.getOutput().ifPresent(output -> builder.withMember("output", output));
+        example.getError()
+                .ifPresent(error -> builder.withMember("error",
+                        Node.objectNodeBuilder()
+                                .withMember("shapeId", error.getShapeId().toString())
+                                .withMember("content", error.getContent())
+                                .build()));
+        example.getBefore().ifPresent(before -> builder.withMember("before", before));
+        example.getAfter().ifPresent(after -> builder.withMember("after", after));
+        return builder.build();
+    }
 
-        Set<ServiceShape> services = model.getServiceShapes();
-        if (services.isEmpty()) {
-            return false;
+    // Projects each named @references on the structure into a ghost resource handle
+    // reachable as input.<name>, synthesized from the observable identifier members.
+    private ObjectNode withReferenceHandles(Model model, ShapeId structureId, ObjectNode values) {
+        Shape shape = model.getShape(structureId).orElse(null);
+        if (shape == null || !shape.hasTrait(ReferencesTrait.class)) {
+            return values;
         }
-
-        for (ServiceShape service : services) {
-            // Skip if the service doesn't have the operation.
-            if (!topDownIndex.getContainedOperations(service).contains(shape)) {
+        ObjectNode result = values;
+        for (ReferencesTrait.Reference reference : shape.expectTrait(ReferencesTrait.class).getReferences()) {
+            if (!reference.getName().isPresent()) {
                 continue;
             }
-
-            // We've already checked if the operation contains the error,
-            // so a service having no errors means we've failed.
-            if (service.getErrorsSet().isEmpty() || !service.getErrorsSet().contains(errorId)) {
-                return false;
+            ObjectNode.Builder ids = Node.objectNodeBuilder();
+            for (Map.Entry<String, String> entry : reference.getIds().entrySet()) {
+                // ids maps a resource identifier name to the member that provides its value.
+                Node value = values.getMember(entry.getValue()).orElse(Node.nullNode());
+                ids.withMember(entry.getKey(), value);
             }
+            ObjectNode.Builder handle = Node.objectNodeBuilder()
+                    .withMember("resource", reference.getResource().getName())
+                    .withMember("ids", ids.build());
+            reference.getService().ifPresent(service -> handle.withMember("service", service.getName()));
+            result = result.withMember(reference.getName().get(), handle.build());
         }
-
-        return true;
+        return result;
     }
 
     private NodeValidationVisitor createVisitor(
-            String name,
             ObjectNode value,
             Model model,
-            Shape shape,
+            OperationShape shape,
             ExamplesTrait.Example example
     ) {
         NodeValidationVisitor.Builder builder = NodeValidationVisitor.builder()
                 .model(model)
                 .eventShapeId(shape.getId())
                 .value(value)
-                .startingContext("Example " + name + " of `" + example.getTitle() + "`")
+                .startingContext("Example `" + example.getTitle() + "`")
                 .eventId(getName());
         if (example.getAllowConstraintErrors()) {
             builder.addFeature(NodeValidationVisitor.Feature.ALLOW_CONSTRAINT_ERRORS);

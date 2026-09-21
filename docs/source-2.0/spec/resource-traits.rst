@@ -235,9 +235,14 @@ the following members:
       - Description
     * - service
       - :ref:`shape-id`
-      - The absolute shape ID of the service to which the resource is bound.
-        As with the ``resource`` property, the provided shape ID is not
-        required to be resolvable at build time.
+      - The absolute shape ID of the service that provides the referenced
+        resource. When omitted, the reference is to the *current service
+        instance*, that is, the instance handling the call ("this service").
+        When specified, it refers to the only or default instance of that
+        service shape; selecting a specific non-default instance (for example a
+        particular region) requires an explicit identifier such as an ARN. As
+        with the ``resource`` property, the provided shape ID is not required to
+        be resolvable at build time.
     * - resource
       - :ref:`shape-id`
       - **Required**. The absolute shape ID of the referenced resource.
@@ -264,6 +269,12 @@ the following members:
       - Defines the semantics of the relationship. The ``rel`` property SHOULD
         contain a link relation as defined in :rfc:`5988#section-4` (i.e.,
         this value SHOULD contain either a `standard link relation`_ or URI).
+    * - name
+      - ``string``
+      - An optional name that identifies the reference. Tooling MAY use the name
+        to refer to this specific reference, for example to project it into an
+        expression language (see the :ref:`jmespath-data-model`). The name MUST
+        NOT collide with a member of the structure.
 
 Runtime resolution of references
 --------------------------------

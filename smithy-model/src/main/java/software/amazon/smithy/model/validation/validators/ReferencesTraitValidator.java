@@ -50,6 +50,19 @@ public final class ReferencesTraitValidator extends AbstractValidator {
     private List<ValidationEvent> validateShape(Model model, Shape shape, ReferencesTrait trait) {
         List<ValidationEvent> events = new ArrayList<>();
         for (ReferencesTrait.Reference reference : trait.getReferences()) {
+            reference.getName().ifPresent(name -> {
+                if (shape.getMember(name).isPresent()) {
+                    events.add(error(shape,
+                            trait,
+                            format(
+                                    "`references` trait reference name `%s` collides with a member of the same name. "
+                                            + "Reference names must be distinct from members so the handle projection "
+                                            + "`input.%s` is reachable.",
+                                    name,
+                                    name)));
+                }
+            });
+
             if (shape.isStringShape() && !reference.getIds().isEmpty()) {
                 events.add(error(shape,
                         trait,

@@ -736,15 +736,19 @@ duplicated on the ``MyList`` shape with different values:
     apply MyList @length(min: 10, max: 20)
 
 
-.. _trait-node-values:
+.. _shape-instances:
 
-Trait node values
------------------
+Shape instances
+---------------
 
-The value provided for a trait MUST be compatible with the ``shape`` of the
-trait. The following table defines each shape type that is available to
-target from traits and how their values are defined in
-:token:`node <smithy:NodeValue>` values.
+A node value is an *instance* of a shape when it is compatible with the shape
+as defined in this section. Node value compatibility is checked wherever node
+values are validated against shapes, including trait values (see
+:ref:`trait-node-values`), the :ref:`examples-trait`, and the
+:ref:`default-trait`.
+
+The following table defines each Smithy type and the node values that are
+valid instances of a shape of that type.
 
 .. list-table::
     :header-rows: 1
@@ -815,11 +819,40 @@ target from traits and how their values are defined in
       - The object MUST contain a single key-value pair. The key MUST be
         one of the member names of the union shape, and the value MUST be
         compatible with the corresponding shape.
+    * - resource
+      - object
+      - A resource instance is an object whose members are the resource's
+        identifiers and properties, representing its state.
+    * - service
+      - object
+      - A service instance is the state of a single instance of a service (a
+        service can have more than one instance, for example one per region): an
+        object mapping each resource contained in the service to an array of
+        instances of that resource.
+
+A *world snapshot* maps each service shape to the set of that service's instances
+(an array, since a service can have multiple instances such as one per region).
+It is used as the ``before`` and ``after`` state of an operation call (see the
+:ref:`contracts trait <contracts-trait>`). The full set is required so that
+cross-service and cross-instance references, such as ARNs, can be resolved. A
+:ref:`reference <references-trait>` without a ``service`` resolves against the
+current service instance; with a ``service`` it resolves against that shape's
+only or default instance.
 
 .. important::
 
-    Trait values MUST be compatible with the :ref:`required-trait` and any
+    An instance MUST be compatible with the :ref:`required-trait` and any
     associated :doc:`constraint traits <constraint-traits>`.
+
+
+.. _trait-node-values:
+
+Trait node values
+-----------------
+
+The value provided for a trait MUST be compatible with the ``shape`` of the
+trait. See :ref:`shape-instances` for the definition of node value
+compatibility.
 
 
 .. _trait-shapes:

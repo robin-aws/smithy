@@ -14,13 +14,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.SourceLocation;
 import software.amazon.smithy.model.knowledge.NullableIndex;
+import software.amazon.smithy.model.knowledge.TopDownIndex;
 import software.amazon.smithy.model.node.Node;
 import software.amazon.smithy.model.node.NodeType;
+import software.amazon.smithy.model.node.ObjectNode;
 import software.amazon.smithy.model.node.StringNode;
 import software.amazon.smithy.model.shapes.BigDecimalShape;
 import software.amazon.smithy.model.shapes.BigIntegerShape;
@@ -46,9 +49,11 @@ import software.amazon.smithy.model.shapes.StringShape;
 import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.shapes.TimestampShape;
 import software.amazon.smithy.model.shapes.UnionShape;
+import software.amazon.smithy.model.traits.ReferencesTrait;
 import software.amazon.smithy.model.validation.node.NodeValidatorPlugin;
 import software.amazon.smithy.model.validation.node.TimestampValidationStrategy;
 import software.amazon.smithy.utils.ListUtils;
+import software.amazon.smithy.utils.SetUtils;
 import software.amazon.smithy.utils.SmithyBuilder;
 
 /**
@@ -447,9 +452,124 @@ public final class NodeValidationVisitor implements ShapeVisitor<List<Validation
         return ListUtils.of();
     }
 
+    private static final Set<String> OPERATION_INSTANCE_MEMBERS =
+            SetUtils.of("input", "output", "error", "before", "after");
+
     @Override
     public List<ValidationEvent> operationShape(OperationShape shape) {
-        return invalidSchema(shape);
+        return value.asObjectNode()
+                .map(object -> validateOperationInstance(shape, object))
+                .orElseGet(() -> invalidShape(shape, NodeType.OBJECT));
+    }
+
+    // An operation instance is the {input, output, error, before, after} tuple of a
+    // single call. input/output/error are validated against their modeled shapes;
+    // before/after are ghost state (opaque, never observed at runtime).
+    private List<ValidationEvent> validateOperationInstance(OperationShape shape, ObjectNode object) {
+        // Run node validator plugins (for example @conditions) against the whole tuple.
+        List<ValidationEvent> events = applyPlugins(shape);
+
+        for (String member : object.getStringMap().keySet()) {
+            if (!OPERATION_INSTANCE_MEMBERS.contains(member)) {
+                events.add(unknownMember(member, shape, Severity.WARNING));
+            }
+        }
+
+        model.getShape(shape.getInputShape()).ifPresent(inputShape -> {
+            Node inputValue = object.getMember("input").orElse(Node.objectNode());
+            // Reference-handle projections (input.<name>) are ghost state, not real
+            // structure members, so strip them before validating the input structurally.
+            events.addAll(inputShape.accept(traverse("input", stripReferenceHandles(inputShape, inputValue))));
+        });
+
+        boolean hasOutput = object.getMember("output").filter(node -> !node.isNullNode()).isPresent();
+        boolean hasError = object.getMember("error").filter(node -> !node.isNullNode()).isPresent();
+
+        // A success carries output; a failure carries error; never both.
+        if (hasOutput && hasError) {
+            events.add(event("An operation instance cannot define both `output` and `error`."));
+        }
+
+        if (hasOutput) {
+            model.getShape(shape.getOutputShape())
+                    .ifPresent(
+                            output -> events.addAll(output.accept(traverse("output", object.expectMember("output")))));
+        }
+
+        if (hasError) {
+            events.addAll(validateInstanceError(shape, object.expectMember("error")));
+        }
+
+        return events;
+    }
+
+    private List<ValidationEvent> validateInstanceError(OperationShape operation, Node errorNode) {
+        if (!errorNode.isObjectNode()) {
+            return ListUtils.of(event("Operation instance `error` must be an object with `shapeId` and `content`."));
+        }
+
+        ObjectNode error = errorNode.expectObjectNode();
+        Optional<String> shapeId = error.getStringMember("shapeId").map(StringNode::getValue);
+        if (!shapeId.isPresent()) {
+            return ListUtils.of(event("Operation instance `error` must define a `shapeId`."));
+        }
+
+        ShapeId errorId;
+        try {
+            errorId = ShapeId.from(shapeId.get());
+        } catch (RuntimeException e) {
+            return ListUtils.of(event("Operation instance `error` has an invalid `shapeId`: " + shapeId.get()));
+        }
+
+        Optional<Shape> errorShape = model.getShape(errorId);
+        if (!errorShape.isPresent()
+                || !(operation.getErrorsSet().contains(errorId) || servicesContainError(operation, errorId))) {
+            return ListUtils.of(event(String.format(
+                    "Operation instance `error` references `%s`, which is not an error of this operation.",
+                    errorId)));
+        }
+
+        Node content = error.getMember("content").orElse(Node.objectNode());
+        return errorShape.get().accept(traverse("error.content", content));
+    }
+
+    private boolean servicesContainError(OperationShape operation, ShapeId errorId) {
+        TopDownIndex topDownIndex = TopDownIndex.of(model);
+        Set<ServiceShape> services = model.getServiceShapes();
+        if (services.isEmpty()) {
+            return false;
+        }
+        for (ServiceShape service : services) {
+            if (!topDownIndex.getContainedOperations(service).contains(operation)) {
+                continue;
+            }
+            if (service.getErrorsSet().isEmpty() || !service.getErrorsSet().contains(errorId)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Removes members whose names match a declared @references name on the shape.
+    // Those are ghost handle projections, not structural members of the input.
+    private Node stripReferenceHandles(Shape inputShape, Node inputValue) {
+        if (!inputValue.isObjectNode() || !inputShape.hasTrait(ReferencesTrait.class)) {
+            return inputValue;
+        }
+        Set<String> names = new HashSet<>();
+        for (ReferencesTrait.Reference reference : inputShape.expectTrait(ReferencesTrait.class).getReferences()) {
+            reference.getName().ifPresent(names::add);
+        }
+        if (names.isEmpty()) {
+            return inputValue;
+        }
+        ObjectNode.Builder builder = Node.objectNodeBuilder();
+        for (Map.Entry<String, Node> entry : inputValue.expectObjectNode().getStringMap().entrySet()) {
+            if (!names.contains(entry.getKey())) {
+                builder.withMember(entry.getKey(), entry.getValue());
+            }
+        }
+        return builder.build();
     }
 
     @Override

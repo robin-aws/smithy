@@ -736,15 +736,19 @@ duplicated on the ``MyList`` shape with different values:
     apply MyList @length(min: 10, max: 20)
 
 
-.. _trait-node-values:
+.. _shape-instances:
 
-Trait node values
------------------
+Shape instances
+---------------
 
-The value provided for a trait MUST be compatible with the ``shape`` of the
-trait. The following table defines each shape type that is available to
-target from traits and how their values are defined in
-:token:`node <smithy:NodeValue>` values.
+A node value is an *instance* of a shape when it is compatible with the shape
+as defined in this section. Node value compatibility is checked wherever node
+values are validated against shapes, including trait values (see
+:ref:`trait-node-values`), the :ref:`examples-trait`, and the
+:ref:`default-trait`.
+
+The following table defines each Smithy type and the node values that are
+valid instances of a shape of that type.
 
 .. list-table::
     :header-rows: 1
@@ -815,11 +819,38 @@ target from traits and how their values are defined in
       - The object MUST contain a single key-value pair. The key MUST be
         one of the member names of the union shape, and the value MUST be
         compatible with the corresponding shape.
+    * - operation
+      - object
+      - An operation instance represents a single call as an object with the
+        members ``input``, ``output``, ``error``, ``before``, and ``after``.
+        ``input`` MUST be an instance of the operation's input shape. A
+        successful call sets ``output`` to an instance of the output shape; a
+        failed call instead sets ``error`` to an object with a ``shapeId`` that
+        names one of the operation's errors and a ``content`` instance of that
+        error shape. ``output`` and ``error`` MUST NOT both be present.
+        ``before`` and ``after`` are resource-state snapshots that are not sent
+        over the wire.
+    * - service
+      - object
+      - Node instances of services are reserved for a future revision.
+    * - resource
+      - object
+      - Node instances of resources are reserved for a future revision.
 
 .. important::
 
-    Trait values MUST be compatible with the :ref:`required-trait` and any
+    An instance MUST be compatible with the :ref:`required-trait` and any
     associated :doc:`constraint traits <constraint-traits>`.
+
+
+.. _trait-node-values:
+
+Trait node values
+-----------------
+
+The value provided for a trait MUST be compatible with the ``shape`` of the
+trait. See :ref:`shape-instances` for the definition of node value
+compatibility.
 
 
 .. _trait-shapes:

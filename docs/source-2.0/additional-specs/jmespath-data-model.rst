@@ -77,40 +77,10 @@ Footnotes
 Operations
 --------------------
 
-An operation does not have a single value. It is exposed to JMESPath as an
-*instance*: the tuple of a single call, represented as an object with the
-following members.
-
-.. list-table::
-    :header-rows: 1
-    :widths: 12 28 60
-
-    * - Member
-      - Value
-      - Description
-    * - input
-      - operation input
-      - The input provided to the call.
-    * - output
-      - operation output
-      - The output returned by a successful call. Absent on failure.
-    * - error
-      - ``{shapeId, content}``
-      - The modeled error returned by a failed call, as an object carrying the
-        error's ``shapeId`` and its ``content``. Absent on success. ``output``
-        and ``error`` are mutually exclusive.
-    * - before
-      - state snapshot
-      - A snapshot of resource state before the call. Model-only (see below).
-    * - after
-      - state snapshot
-      - A snapshot of resource state after the call. Model-only (see below).
-
-Expressions on an operation therefore reference these members, for example
-``input.start < input.end``.
-
-Resource and service instances are not yet exposed to JMESPath; they are
-reserved for a future revision that maps them to their state.
+An operation is exposed to JMESPath as its *instance*: the
+``{input, output, error, before, after}`` object defined in
+:ref:`shape-instances`. Expressions on an operation reference those members,
+for example ``input.start < input.end``.
 
 --------------------
 Model-only members

@@ -1,5 +1,4 @@
 .. _jmespath-data-model:
-.. _waiter-JMESPath-data-model:
 
 ===================
 JMESPath data model

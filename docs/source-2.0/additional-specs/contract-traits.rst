@@ -52,7 +52,7 @@ the following members:
       - ``string``
       - **Required**. Documentation about the condition defined using CommonMark_.
 
-See the :ref:`JMESPath data model <waiter-jmespath-data-model>` for details on how Smithy types are mapped to JMESPath types.
+See the :ref:`JMESPath data model <jmespath-data-model>` for details on how Smithy types are mapped to JMESPath types.
 
 .. code-block:: smithy
 

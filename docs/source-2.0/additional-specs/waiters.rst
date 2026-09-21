@@ -473,6 +473,8 @@ support the following members:
         ``expression`` with the ``expected`` value. The string value MUST
         be a valid :ref:`PathComparator-enum`.
 
+.. _waiter-JMESPath-data-model:
+
 JMESPath data model
 -------------------
 

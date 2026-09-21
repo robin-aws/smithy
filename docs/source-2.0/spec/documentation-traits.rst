@@ -142,12 +142,12 @@ Each ``example`` trait value is a structure with the following members:
     * - before
       - ``document``
       - A snapshot of resource state before the call, used to evaluate operation
-        :ref:`conditions <conditions-trait>`. This is model-only: it is never
+        :ref:`contracts <contracts-trait>`. This is model-only: it is never
         part of the wire data. See the :ref:`jmespath-data-model`.
     * - after
       - ``document``
       - A snapshot of resource state after the call, used to evaluate operation
-        :ref:`conditions <conditions-trait>`. This is model-only: it is never
+        :ref:`contracts <contracts-trait>`. This is model-only: it is never
         part of the wire data. See the :ref:`jmespath-data-model`.
     * - allowConstraintErrors
       - ``boolean``

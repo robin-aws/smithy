@@ -5,10 +5,10 @@ JMESPath data model
 ===================
 
 Several Smithy features use JMESPath_ expressions over model data, including
-:ref:`waiters <waiters>` and the :ref:`conditions trait <conditions-trait>`.
-This section defines the data model those expressions are evaluated against:
-how Smithy types are exposed as `JMESPath types`_, and how an operation is
-exposed as an instance.
+:ref:`waiters <waiters>`, the :ref:`conditions trait <conditions-trait>`, and
+the :ref:`contracts trait <contracts-trait>`. This section defines the data
+model those expressions are evaluated against: how Smithy types are exposed as
+`JMESPath types`_, and how an operation call is exposed.
 
 --------------------
 Type conversions
@@ -73,14 +73,24 @@ Footnotes
 .. [#funion] ``union`` values are represented exactly like structures except
    only a single member is set to a non-null value.
 
+.. _jmespath-operation-call:
+
 --------------------
-Operations
+Operation calls
 --------------------
 
-An operation is exposed to JMESPath as its *instance*: the
-``{input, output, error, before, after}`` object defined in
-:ref:`shape-instances`. Expressions on an operation reference those members,
-for example ``input.start < input.end``.
+An operation has no value instance; it is a procedure. What a
+:ref:`contract <contracts-trait>` constrains is a single *call*, exposed to
+JMESPath as an object with the following members:
+
+- ``input``: an instance of the operation's input shape.
+- ``output``: an instance of the output shape on a successful call; absent on failure.
+- ``error``: an object ``{shapeId, content}`` on a failed call; absent on success.
+  ``output`` and ``error`` are mutually exclusive.
+- ``before`` and ``after``: :ref:`world snapshots <shape-instances>` immediately
+  before and after the call. These are model-only (see below).
+
+Expressions reference these members, for example ``input.start < input.end``.
 
 --------------------
 Model-only members

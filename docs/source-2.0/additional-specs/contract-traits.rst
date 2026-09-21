@@ -27,11 +27,11 @@ Services will usually check these contracts outside of service frameworks in mor
 --------------------
 
 Summary
-    Restricts shape values to those which satisfy the given JMESPath expressions.
+    Restricts the values of a shape to those which satisfy the given JMESPath expressions.
 Trait selector
-    ``:not(:test(service, resource))``
+    ``:not(:test(service, operation, resource))``
 
-    *Any shape other than services and resources*
+    *Any shape other than services, operations, and resources*
 Value type
     ``map``
 
@@ -79,22 +79,36 @@ See the :ref:`JMESPath data model <jmespath-data-model>` for details on how Smit
     string Name
 
 
--------------------------------------
-Applying ``conditions`` to operations
--------------------------------------
+.. smithy-trait:: smithy.contracts#contracts
+.. _contracts-trait:
 
-The ``conditions`` trait MAY be applied to an operation. An operation is not
-evaluated against a single shape value but against its *instance*, the
-``{input, output, error, before, after}`` tuple of a single call. See the
-:ref:`jmespath-data-model` for how that instance is exposed to JMESPath and for
-the distinction between observable and model-only members.
+-------------------
+``contracts`` trait
+-------------------
 
-Expressions on an operation reference the instance members, for example
-``input.start < input.end``:
+Summary
+    Constrains the calls of an operation to those which satisfy the given JMESPath
+    expressions. Each expression must hold for every call.
+Trait selector
+    ``operation``
+Value type
+    ``map``
+
+Where ``conditions`` restricts the *values* of a data shape, ``contracts``
+constrains the *calls* of an operation. An operation is a procedure and has no
+value; a contract is a predicate that must hold for every call, evaluated over
+the operation's :ref:`call <jmespath-operation-call>`, the
+``{input, output, error, before, after}`` object. The value type is the same
+map of named ``Condition`` structures as ``conditions``.
+
+Preconditions and postconditions are ordinary entries gated on the call outcome
+(``error``). A call is materialized from an :ref:`examples-trait` value at build
+time, with ``before`` and ``after`` supplied by the example's ``before`` and
+``after`` members.
 
 .. code-block:: smithy
 
-    @conditions({
+    @contracts({
         StartBeforeEnd: {
             documentation: "The requested start time must be strictly less than the end time"
             expression: "input.start < input.end"
@@ -104,17 +118,12 @@ Expressions on an operation reference the instance members, for example
         input: FetchLogsInput
     }
 
-An operation instance is materialized from an :ref:`examples-trait` value, which
-is how operation conditions are checked at build time. The ``before`` and
-``after`` snapshots are supplied through the ``before`` and ``after`` members of
-the example.
-
 ------------------
 Contract functions
 ------------------
 
 In addition to the built-in JMESPath_ functions, the following functions are
-available in ``conditions`` expressions:
+available in ``contracts`` expressions:
 
 .. list-table::
     :header-rows: 1
@@ -123,11 +132,11 @@ available in ``conditions`` expressions:
     * - Function
       - Description
     * - ``requires(instance, predicate)``
-      - Declares a necessary precondition. On a successful instance (its
-        ``error`` is null), ``predicate`` MUST be truthy; on a failure instance
-        the requirement is vacuously satisfied. ``predicate`` is evaluated
-        eagerly, because a necessary precondition reads only pre-call state that
-        is present on both the success and failure paths.
+      - Declares a necessary precondition. On a successful call (its ``error`` is
+        null), ``predicate`` MUST be truthy; on a failed call the requirement is
+        vacuously satisfied. ``predicate`` is evaluated eagerly, because a
+        necessary precondition reads only pre-call state that is present on both
+        the success and failure paths.
     * - ``resource(world, handle)``
       - Looks up a single resource instance in a ``before`` or ``after`` world
         snapshot and returns it, or null when none matches. The ``handle`` is an
@@ -140,7 +149,7 @@ be written directly:
 
 .. code-block:: smithy
 
-    @conditions({
+    @contracts({
         KeyEnabledOnSuccess: {
             documentation: "A successful call requires the referenced key to be ENABLED beforehand"
             expression: "requires(@, resource(before, input.key).keyState == 'ENABLED')"

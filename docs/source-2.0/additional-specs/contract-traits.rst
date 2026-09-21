@@ -146,6 +146,10 @@ be written directly:
             expression: "requires(@, resource(before, input.key).keyState == 'ENABLED')"
         }
     })
+    resource Key {
+        identifiers: {keyId: String}
+    }
+
     operation Encrypt {
         input: EncryptInput
         output: EncryptOutput
@@ -159,6 +163,9 @@ be written directly:
         @required
         keyId: String
     }
+
+    @output
+    structure EncryptOutput {}
 
 
 .. _CommonMark: https://spec.commonmark.org/

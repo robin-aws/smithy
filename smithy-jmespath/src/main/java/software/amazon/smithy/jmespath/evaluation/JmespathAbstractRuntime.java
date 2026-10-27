@@ -175,11 +175,8 @@ public interface JmespathAbstractRuntime<T> {
     FunctionArgument<T> createFunctionArgument(JmespathExpression expression);
 
     ///////////////////////////////
-    // Errors
+    // Expressions
     ///////////////////////////////
-
-    // Throws the error immediately if the runtime is concrete
-    T createError(JmespathExceptionType type, String message);
 
     // Throws unsupported if the runtime is concrete
     T createExpression(JmespathExpression expression);

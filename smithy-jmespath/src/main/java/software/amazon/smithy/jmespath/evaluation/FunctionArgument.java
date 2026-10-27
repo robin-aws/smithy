@@ -90,17 +90,17 @@ public interface FunctionArgument<T> {
 
         @Override
         public T expectValue() {
-            return runtime.createError(JmespathExceptionType.INVALID_TYPE, "invalid-type");
+            throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
         }
 
         @Override
         public T expectType(RuntimeType runtimeType) {
-            return runtime.createError(JmespathExceptionType.INVALID_TYPE, "invalid-type");
+            throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
         }
 
         @Override
         public T expectAnyOf(Set<RuntimeType> types) {
-            return runtime.createError(JmespathExceptionType.INVALID_TYPE, "invalid-type");
+            throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
         }
 
         @Override

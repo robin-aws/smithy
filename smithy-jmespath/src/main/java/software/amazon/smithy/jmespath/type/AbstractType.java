@@ -1,5 +1,6 @@
 package software.amazon.smithy.jmespath.type;
 
+import software.amazon.smithy.jmespath.JmespathException;
 import software.amazon.smithy.jmespath.JmespathExceptionType;
 import software.amazon.smithy.jmespath.RuntimeType;
 
@@ -14,7 +15,7 @@ public abstract class AbstractType implements Type {
         if (types.contains(runtimeType())) {
             return this;
         } else {
-            return new ErrorType(JmespathExceptionType.INVALID_TYPE);
+            throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid type");
         }
     }
 }

@@ -179,11 +179,6 @@ public class TypeJmespathRuntime implements JmespathAbstractRuntime<Type> {
     }
 
     @Override
-    public Type createError(JmespathExceptionType type, String message) {
-        return new ErrorType(type);
-    }
-
-    @Override
     public Type createExpression(JmespathExpression expression) {
         return new ExpressionType(expression);
     }

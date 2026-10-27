@@ -53,7 +53,7 @@ public final class FunctionRegistry<T> {
     public T apply(AbstractEvaluator<T> evaluator, String name, List<FunctionArgument<T>> arguments) {
         Function<T> function = lookup(evaluator.runtime(), name);
         if (function == null) {
-            return evaluator.runtime().createError(JmespathExceptionType.UNKNOWN_FUNCTION, "Unknown function: " + name);
+            throw new JmespathException(JmespathExceptionType.UNKNOWN_FUNCTION, "Unknown function: " + name);
         }
         return function.apply(evaluator, arguments);
     }

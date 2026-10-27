@@ -10,10 +10,14 @@ class IfFunction<T> implements Function<T> {
 
     @Override
     public T abstractApply(AbstractEvaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        checkArgumentCount(3, functionArguments);
+
+        // Just extract the first argument as a value
+        // in case it's an expression.
+        functionArguments.get(0).expectValue();
         T thenValue = functionArguments.get(1).expectValue();
         T elseValue = functionArguments.get(2).expectValue();
 
-        // TODO: Have to pass on any error from the condition
         return evaluator.runtime().either(thenValue, elseValue);
     }
 

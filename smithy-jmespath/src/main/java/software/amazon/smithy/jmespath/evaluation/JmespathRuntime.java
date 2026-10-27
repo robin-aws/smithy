@@ -232,7 +232,7 @@ public interface JmespathRuntime<T> extends JmespathAbstractRuntime<T>, Comparat
         if (is(index, RuntimeType.NUMBER)) {
             return element(array, asNumber(index).intValue());
         } else {
-            return createError(JmespathExceptionType.INVALID_TYPE, "Expected number");
+            throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "Expected number");
         }
     }
 
@@ -307,13 +307,8 @@ public interface JmespathRuntime<T> extends JmespathAbstractRuntime<T>, Comparat
     }
 
     ///////////////////////////////
-    // Errors
+    // Expressions
     ///////////////////////////////
-
-    @Override
-    default T createError(JmespathExceptionType type, String message) {
-        throw new JmespathException(type, message);
-    }
 
     @Override
     default T createExpression(JmespathExpression expression) {

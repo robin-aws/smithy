@@ -1,5 +1,6 @@
 package software.amazon.smithy.jmespath.type;
 
+import software.amazon.smithy.jmespath.JmespathException;
 import software.amazon.smithy.jmespath.JmespathExceptionType;
 import software.amazon.smithy.jmespath.RuntimeType;
 import software.amazon.smithy.jmespath.evaluation.JmespathRuntime;
@@ -40,7 +41,7 @@ public class BottomType implements Type {
 
     @Override
     public Type expectAnyOf(Set<RuntimeType> types) {
-        return new ErrorType(JmespathExceptionType.INVALID_TYPE);
+        throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid type");
     }
 
     @Override

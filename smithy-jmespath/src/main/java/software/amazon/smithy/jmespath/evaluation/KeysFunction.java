@@ -4,21 +4,26 @@
  */
 package software.amazon.smithy.jmespath.evaluation;
 
+import software.amazon.smithy.jmespath.RuntimeType;
+
 import java.util.List;
 
-class KeysFunction implements Function {
+class KeysFunction<T> implements Function<T> {
     @Override
     public String name() {
         return "keys";
     }
 
     @Override
-    public <T> T apply(JmespathRuntime<T> runtime, List<FunctionArgument<T>> functionArguments) {
+    public T abstractApply(AbstractEvaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        return evaluator.runtime().createAny(RuntimeType.ARRAY);
+    }
+
+    @Override
+    public T concreteApply(Evaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
         checkArgumentCount(1, functionArguments);
         T value = functionArguments.get(0).expectObject();
 
-        JmespathRuntime.ArrayBuilder<T> arrayBuilder = runtime.arrayBuilder();
-        arrayBuilder.addAll(value);
-        return arrayBuilder.build();
+        return evaluator.runtime().arrayBuilder().addAll(value).build();
     }
 }

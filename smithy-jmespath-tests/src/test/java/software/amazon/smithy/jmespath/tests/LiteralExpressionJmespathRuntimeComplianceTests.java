@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.smithy.jmespath.LiteralExpressionJmespathRuntime;
+import software.amazon.smithy.jmespath.type.TypeJmespathRuntime;
 
 public class LiteralExpressionJmespathRuntimeComplianceTests {
     @ParameterizedTest(name = "{0}")
@@ -17,6 +18,9 @@ public class LiteralExpressionJmespathRuntimeComplianceTests {
     }
 
     public static Stream<?> source() {
-        return ComplianceTestRunner.defaultParameterizedTestSource(LiteralExpressionJmespathRuntime.INSTANCE);
+        return ComplianceTestRunner.defaultParameterizedTestSource(
+                LiteralExpressionJmespathRuntime.INSTANCE,
+                new TypeJmespathRuntime(),
+                (t, o) -> t.isInstance(o, LiteralExpressionJmespathRuntime.INSTANCE));
     }
 }

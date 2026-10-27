@@ -6,8 +6,11 @@ package software.amazon.smithy.jmespath;
 
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
+
 import software.amazon.smithy.jmespath.ast.LiteralExpression;
-import software.amazon.smithy.jmespath.evaluation.Evaluator;
+import software.amazon.smithy.jmespath.evaluation.FunctionRegistry;
+import software.amazon.smithy.jmespath.evaluation.JmespathAbstractRuntime;
 import software.amazon.smithy.jmespath.evaluation.JmespathRuntime;
 
 /**
@@ -42,7 +45,7 @@ public abstract class JmespathExpression {
      * @return Returns the parsed expression.
      * @throws JmespathException if the expression is invalid.
      */
-    public static <T> JmespathExpression parse(String text, JmespathRuntime<T> runtime) {
+    public static <T> JmespathExpression parse(String text, JmespathAbstractRuntime<T> runtime) {
         return Parser.parse(text, runtime);
     }
 
@@ -54,8 +57,8 @@ public abstract class JmespathExpression {
      * @return Returns the parsed JSON value.
      * @throws JmespathException if the text is invalid.
      */
-    public static <T> T parseJson(String text, JmespathRuntime<T> runtime) {
-        Lexer<T> lexer = new Lexer<T>(text, runtime);
+    public static <T> T parseJson(String text, JmespathAbstractRuntime<T> runtime) {
+        Lexer<T> lexer = new Lexer<>(text, runtime);
         return lexer.parseJsonValue();
     }
 
@@ -109,6 +112,19 @@ public abstract class JmespathExpression {
         return new LinterResult(result.getType(), problems);
     }
 
+    public <T> JmespathQuery<T> compile(JmespathAbstractRuntime<T> runtime, FunctionRegistry<T> functions) {
+        JmespathExpression resolved = resolveRec(runtime, functions);
+        if (runtime instanceof JmespathRuntime) {
+            return new JmespathExpressionQuery<>((JmespathRuntime<T>)runtime, functions, resolved);
+        } else {
+            return new JmespathAbstractExpressionQuery<>(runtime, functions, resolved);
+        }
+    }
+
+    JmespathExpression substitute(Function<JmespathExpression, JmespathExpression> f) {
+        return new SubstitutionVisitor(f).visit(this);
+    }
+
     /**
      * Evaluate the expression for the given current node.
      *
@@ -126,7 +142,15 @@ public abstract class JmespathExpression {
      * @param runtime The JmespathRuntime used to manipulate node values.
      * @return Returns the result of evaluating the expression.
      */
-    public <T> T evaluate(T currentNode, JmespathRuntime<T> runtime) {
-        return new Evaluator<>(currentNode, runtime).visit(this);
+    public <T> T evaluate(T currentNode, JmespathAbstractRuntime<T> runtime) {
+        return compile(runtime, FunctionRegistry.getSPIRegistry()).apply(currentNode);
+    }
+
+    public <T> JmespathExpression resolve(JmespathAbstractRuntime<T> runtime, FunctionRegistry<T> functions) {
+        return null;
+    }
+
+    public <T> JmespathExpression resolveRec(JmespathAbstractRuntime<T> runtime, FunctionRegistry<T> functions) {
+        return substitute(e -> e.resolve(runtime, functions));
     }
 }

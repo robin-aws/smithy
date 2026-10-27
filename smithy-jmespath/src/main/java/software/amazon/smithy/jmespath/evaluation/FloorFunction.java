@@ -4,23 +4,30 @@
  */
 package software.amazon.smithy.jmespath.evaluation;
 
+import software.amazon.smithy.jmespath.RuntimeType;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
-class FloorFunction implements Function {
+class FloorFunction<T> implements Function<T> {
     @Override
     public String name() {
         return "floor";
     }
 
     @Override
-    public <T> T apply(JmespathRuntime<T> runtime, List<FunctionArgument<T>> functionArguments) {
+    public T abstractApply(AbstractEvaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        return evaluator.runtime().createAny(RuntimeType.NUMBER);
+    }
+
+    @Override
+    public T concreteApply(Evaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
         checkArgumentCount(1, functionArguments);
         T value = functionArguments.get(0).expectNumber();
-        Number number = runtime.asNumber(value);
+        Number number = evaluator.runtime().asNumber(value);
 
-        switch (runtime.numberType(value)) {
+        switch (evaluator.runtime().numberType(value)) {
             case BYTE:
             case SHORT:
             case INTEGER:
@@ -28,11 +35,11 @@ class FloorFunction implements Function {
             case BIG_INTEGER:
                 return value;
             case BIG_DECIMAL:
-                return runtime.createNumber(((BigDecimal) number).setScale(0, RoundingMode.FLOOR));
+                return evaluator.runtime().createNumber(((BigDecimal) number).setScale(0, RoundingMode.FLOOR));
             case DOUBLE:
-                return runtime.createNumber(Math.floor(number.doubleValue()));
+                return evaluator.runtime().createNumber(Math.floor(number.doubleValue()));
             case FLOAT:
-                return runtime.createNumber(Math.floor(number.floatValue()));
+                return evaluator.runtime().createNumber(Math.floor(number.floatValue()));
             default:
                 throw new RuntimeException("Unknown number type: " + number.getClass().getName());
         }

@@ -4,23 +4,31 @@
  */
 package software.amazon.smithy.jmespath.evaluation;
 
+import software.amazon.smithy.jmespath.RuntimeType;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
-class CeilFunction implements Function {
+class CeilFunction<T> implements Function<T> {
     @Override
     public String name() {
         return "ceil";
     }
 
     @Override
-    public <T> T apply(JmespathRuntime<T> runtime, List<FunctionArgument<T>> functionArguments) {
+    public T abstractApply(AbstractEvaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        return evaluator.runtime().createAny(RuntimeType.NUMBER);
+    }
+
+    @Override
+    public T concreteApply(Evaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
         checkArgumentCount(1, functionArguments);
         T value = functionArguments.get(0).expectNumber();
-        Number number = runtime.asNumber(value);
 
-        switch (runtime.numberType(value)) {
+        Number number = evaluator.runtime().asNumber(value);
+
+        switch (evaluator.runtime().numberType(value)) {
             case BYTE:
             case SHORT:
             case INTEGER:
@@ -28,11 +36,11 @@ class CeilFunction implements Function {
             case BIG_INTEGER:
                 return value;
             case BIG_DECIMAL:
-                return runtime.createNumber(((BigDecimal) number).setScale(0, RoundingMode.CEILING));
+                return evaluator.runtime().createNumber(((BigDecimal) number).setScale(0, RoundingMode.CEILING));
             case DOUBLE:
-                return runtime.createNumber(Math.ceil(number.doubleValue()));
+                return evaluator.runtime().createNumber(Math.ceil(number.doubleValue()));
             case FLOAT:
-                return runtime.createNumber(Math.ceil(number.floatValue()));
+                return evaluator.runtime().createNumber(Math.ceil(number.floatValue()));
             default:
                 throw new RuntimeException("Unknown number type: " + number.getClass().getName());
         }

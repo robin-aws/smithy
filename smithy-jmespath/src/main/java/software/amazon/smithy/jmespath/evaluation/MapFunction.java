@@ -5,16 +5,35 @@
 package software.amazon.smithy.jmespath.evaluation;
 
 import java.util.List;
-import software.amazon.smithy.jmespath.JmespathExpression;
+import java.util.Map;
 
-class MapFunction implements Function {
+import software.amazon.smithy.jmespath.JmespathExpression;
+import software.amazon.smithy.jmespath.ast.LiteralExpression;
+
+class MapFunction<T> implements Function<T> {
+
+    private static final JmespathExpression FOLDER_TEMPLATE = JmespathExpression.parse("append(acc, eval('mapper', element))");
+
     @Override
     public String name() {
         return "map";
     }
 
     @Override
-    public <T> T apply(JmespathRuntime<T> runtime, List<FunctionArgument<T>> functionArguments) {
+    public T abstractApply(AbstractEvaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        JmespathAbstractRuntime<T> runtime = evaluator.runtime();
+        checkArgumentCount(2, functionArguments);
+        JmespathExpression mapper = functionArguments.get(0).expectExpression();
+        T array = functionArguments.get(1).expectArray();
+
+        T acc = runtime.arrayBuilder().build();
+        JmespathExpression folder = evaluator.substitute(LiteralExpression.from("mapper"), mapper, FOLDER_TEMPLATE);
+        return evaluator.foldLeft(acc, folder, array);
+    }
+
+    @Override
+    public T concreteApply(Evaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        JmespathRuntime<T> runtime = evaluator.runtime();
         checkArgumentCount(2, functionArguments);
         JmespathExpression expression = functionArguments.get(0).expectExpression();
         T array = functionArguments.get(1).expectArray();

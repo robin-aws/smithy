@@ -4,23 +4,31 @@
  */
 package software.amazon.smithy.jmespath.evaluation;
 
+import software.amazon.smithy.jmespath.RuntimeType;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 
-class AbsFunction implements Function {
+class AbsFunction<T> implements Function<T> {
     @Override
     public String name() {
         return "abs";
     }
 
     @Override
-    public <T> T apply(JmespathRuntime<T> runtime, List<FunctionArgument<T>> functionArguments) {
+    public T abstractApply(AbstractEvaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        return evaluator.runtime().createAny(RuntimeType.NUMBER);
+    }
+
+    @Override
+    public T concreteApply(Evaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
         checkArgumentCount(1, functionArguments);
         T value = functionArguments.get(0).expectNumber();
-        Number number = runtime.asNumber(value);
+        Number number = evaluator.runtime().asNumber(value);
 
-        switch (runtime.numberType(value)) {
+        JmespathRuntime<T> runtime = evaluator.runtime();
+        switch (evaluator.runtime().numberType(value)) {
             case BYTE:
             case SHORT:
             case INTEGER:

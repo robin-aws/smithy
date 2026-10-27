@@ -7,14 +7,21 @@ package software.amazon.smithy.jmespath.evaluation;
 import java.util.List;
 import software.amazon.smithy.jmespath.JmespathExpression;
 
-class MaxByFunction implements Function {
+class MaxByFunction<T> implements Function<T> {
     @Override
     public String name() {
         return "max_by";
     }
 
     @Override
-    public <T> T apply(JmespathRuntime<T> runtime, List<FunctionArgument<T>> functionArguments) {
+    public T abstractApply(AbstractEvaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        // TODO: Can do better via fold_left
+        return evaluator.createAny();
+    }
+
+    @Override
+    public T concreteApply(Evaluator<T> evaluator, List<FunctionArgument<T>> functionArguments) {
+        JmespathRuntime<T> runtime = evaluator.runtime();
         checkArgumentCount(2, functionArguments);
         T array = functionArguments.get(0).expectArray();
         JmespathExpression expression = functionArguments.get(1).expectExpression();

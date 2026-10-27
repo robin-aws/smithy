@@ -89,6 +89,11 @@ public final class LiteralExpressionJmespathRuntime implements JmespathRuntime<L
     }
 
     @Override
+    public LiteralExpression abstractElement(LiteralExpression array, LiteralExpression index) {
+        return element(array, index.expectNumberValue().intValue());
+    }
+
+    @Override
     public Iterable<LiteralExpression> asIterable(LiteralExpression array) {
         switch (array.getType()) {
             case ARRAY:
@@ -109,17 +114,19 @@ public final class LiteralExpressionJmespathRuntime implements JmespathRuntime<L
         private final List<Object> result = new ArrayList<>();
 
         @Override
-        public void add(LiteralExpression value) {
+        public ArrayLiteralExpressionBuilder add(LiteralExpression value) {
             result.add(value.getValue());
+            return this;
         }
 
         @Override
-        public void addAll(LiteralExpression array) {
+        public ArrayLiteralExpressionBuilder addAll(LiteralExpression array) {
             if (array.isArrayValue()) {
                 result.addAll(array.expectArrayValue());
             } else {
                 result.addAll(array.expectObjectValue().keySet());
             }
+            return this;
         }
 
         @Override
@@ -146,13 +153,15 @@ public final class LiteralExpressionJmespathRuntime implements JmespathRuntime<L
         private final Map<String, Object> result = new HashMap<>();
 
         @Override
-        public void put(LiteralExpression key, LiteralExpression value) {
+        public ObjectLiteralExpressionBuilder put(LiteralExpression key, LiteralExpression value) {
             result.put(key.expectStringValue(), value.getValue());
+            return this;
         }
 
         @Override
-        public void putAll(LiteralExpression object) {
+        public ObjectLiteralExpressionBuilder putAll(LiteralExpression object) {
             result.putAll(object.expectObjectValue());
+            return this;
         }
 
         @Override

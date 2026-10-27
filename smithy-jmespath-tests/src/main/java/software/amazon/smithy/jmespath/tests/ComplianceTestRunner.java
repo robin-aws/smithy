@@ -11,16 +11,19 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import software.amazon.smithy.jmespath.JmespathException;
 import software.amazon.smithy.jmespath.JmespathExceptionType;
 import software.amazon.smithy.jmespath.JmespathExpression;
 import software.amazon.smithy.jmespath.RuntimeType;
+import software.amazon.smithy.jmespath.evaluation.EvaluationUtils;
 import software.amazon.smithy.jmespath.evaluation.Evaluator;
+import software.amazon.smithy.jmespath.evaluation.JmespathAbstractRuntime;
 import software.amazon.smithy.jmespath.evaluation.JmespathRuntime;
 import software.amazon.smithy.utils.IoUtils;
 
-public class ComplianceTestRunner<T> {
+public class ComplianceTestRunner<T, A> {
     private static final String DEFAULT_TEST_CASE_LOCATION = "compliance";
     private static final String SUBJECT_MEMBER = "given";
     private static final String CASES_MEMBER = "cases";
@@ -30,19 +33,27 @@ public class ComplianceTestRunner<T> {
     private static final String ERROR_MEMBER = "error";
     private static final String BENCH_MEMBER = "bench";
     private final JmespathRuntime<T> runtime;
-    private final List<TestCase<T>> testCases = new ArrayList<>();
+    private final JmespathAbstractRuntime<A> abstractRuntime;
+    private final BiPredicate<A, T> instanceTest;
+    private final List<TestCase<T, A>> testCases = new ArrayList<>();
 
-    private ComplianceTestRunner(JmespathRuntime<T> runtime) {
+    private ComplianceTestRunner(JmespathRuntime<T> runtime, JmespathAbstractRuntime<A> abstractRuntime, BiPredicate<A, T> instanceTest) {
         this.runtime = runtime;
+        this.abstractRuntime = abstractRuntime;
+        this.instanceTest = instanceTest;
     }
 
     public static <T> Stream<Object[]> defaultParameterizedTestSource(JmespathRuntime<T> runtime) {
-        ComplianceTestRunner<T> runner = new ComplianceTestRunner<>(runtime);
+        return defaultParameterizedTestSource(runtime, null, null);
+    }
+
+    public static <T, A> Stream<Object[]> defaultParameterizedTestSource(JmespathRuntime<T> runtime, JmespathAbstractRuntime<A> abstractRuntime, BiPredicate<A, T> instanceTest) {
+        ComplianceTestRunner<T, A> runner = new ComplianceTestRunner<>(runtime, abstractRuntime, instanceTest);
         URL manifest = ComplianceTestRunner.class.getResource(DEFAULT_TEST_CASE_LOCATION + "/MANIFEST");
         try (var reader = new BufferedReader(new InputStreamReader(manifest.openStream(), StandardCharsets.UTF_8))) {
             reader.lines().forEach(line -> {
                 var url = ComplianceTestRunner.class.getResource(DEFAULT_TEST_CASE_LOCATION + "/" + line.trim());
-                runner.testCases.addAll(TestCase.from(url, runtime));
+                runner.testCases.addAll(TestCase.from(url, runtime, abstractRuntime, instanceTest));
             });
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -54,8 +65,14 @@ public class ComplianceTestRunner<T> {
         return testCases.stream().map(testCase -> new Object[] {testCase.name(), testCase});
     }
 
-    private record TestCase<T>(
+    public <A> Stream<Object[]> parameterizedAbstractTestSource(JmespathRuntime<A> abstractRuntime, BiPredicate<T, A> abstractPredicate) {
+        return testCases.stream().map(testCase -> new Object[] {testCase.name(), (Runnable)() -> testCase.abstractRun(abstractRuntime, abstractPredicate)});
+    }
+
+    private record TestCase<T, A>(
             JmespathRuntime<T> runtime,
+            JmespathAbstractRuntime<A> abstractRuntime,
+            BiPredicate<A, T> instanceTest,
             String testSuite,
             String comment,
             T given,
@@ -64,10 +81,10 @@ public class ComplianceTestRunner<T> {
             JmespathExceptionType expectedError,
             String benchmark)
             implements Runnable {
-        public static <T> List<TestCase<T>> from(URL url, JmespathRuntime<T> runtime) {
+        public static <T, A> List<TestCase<T, A>> from(URL url, JmespathRuntime<T> runtime, JmespathAbstractRuntime<A> abstractRuntime, BiPredicate<A, T> instanceTest) {
             var path = url.getPath();
             var testSuiteName = path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.'));
-            var testCases = new ArrayList<TestCase<T>>();
+            var testCases = new ArrayList<TestCase<T, A>>();
             String text = IoUtils.readUtf8Url(url);
             T tests = JmespathExpression.parseJson(text, runtime);
 
@@ -92,6 +109,8 @@ public class ComplianceTestRunner<T> {
 
                     var benchmark = valueAsString(runtime, testCase, BENCH_MEMBER);
                     testCases.add(new TestCase<>(runtime,
+                            abstractRuntime,
+                            instanceTest,
                             testSuiteName,
                             comment,
                             given,
@@ -121,10 +140,11 @@ public class ComplianceTestRunner<T> {
         @Override
         public void run() {
             try {
-                var parsed = JmespathExpression.parse(expression);
-                var result = new Evaluator<>(given, runtime).visit(parsed);
+                var parsed = JmespathExpression.parse(expression, runtime);
+                var result = parsed.evaluate(given, runtime);
                 if (benchmark != null) {
                     // Benchmarks don't include expected results or errors
+                    // TODO: Could still run these?
                     return;
                 }
                 if (expectedError != null) {
@@ -138,7 +158,32 @@ public class ComplianceTestRunner<T> {
                                 + "Actual:    " + runtime.toString(result) + "\n"
                                 + "For query: " + expression + "\n");
                     }
+
+                    if (abstractRuntime != null) {
+                        var abstractedGiven = EvaluationUtils.convert(runtime, given, abstractRuntime);
+                        var abstractResult = parsed.evaluate(abstractedGiven, abstractRuntime);
+
+                        if (!instanceTest.test(abstractResult, result)) {
+                            throw new AssertionError("Expected " + result + " to be an instance of " + abstractResult + ".\n"
+                                    + "For query: " + expression + "\n");
+                        }
+                    }
                 }
+            } catch (JmespathException e) {
+                if (!e.getType().equals(expectedError)) {
+                    throw new AssertionError("Expected error does not match actual error. \n"
+                            + "Expected: " + (expectedError != null ? expectedError : "(no error)") + "\n"
+                            + "Actual: " + e.getType() + " - " + e.getMessage() + "\n"
+                            + "For query: " + expression + "\n", e);
+                }
+            }
+        }
+
+        public <A> void abstractRun(JmespathRuntime<A> abstractRuntime, BiPredicate<T, A> abstractPredicate) {
+            try {
+                var parsed = JmespathExpression.parse(expression);
+                var result = new Evaluator<>(given, runtime).visit(parsed);
+
             } catch (JmespathException e) {
                 if (!e.getType().equals(expectedError)) {
                     throw new AssertionError("Expected error does not match actual error. \n"

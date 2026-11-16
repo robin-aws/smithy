@@ -143,7 +143,9 @@ string shape used as one of its members. Each handle is an object
 ``resource`` is the shape ID of the referenced resource, ``service`` is the shape
 ID of the service that contains it, and ``ids`` maps each resource identifier name
 to its value. For a reference on a structure, ``ids`` comes from the reference's
-own ``ids`` mapping. For a reference on a string shape, which has exactly one
+own ``ids`` mapping. When ``ids`` is :ref:`omitted <implicit-ids>`, each
+identifier's value is the value of the member of the same name.
+For a reference on a string shape, which has exactly one
 identifier and no ``ids`` mapping, that identifier's value is the member's own
 value. The handle mirrors the coordinates that locate the resource in a
 :ref:`world snapshot <world-snapshot>`: the service shape, then the resource

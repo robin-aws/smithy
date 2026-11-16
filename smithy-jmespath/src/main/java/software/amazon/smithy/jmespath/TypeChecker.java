@@ -146,7 +146,10 @@ final class TypeChecker implements ExpressionVisitor<LiteralExpression> {
     public LiteralExpression visitExpressionType(ExpressionTypeExpression expression) {
         // Expression references are late bound, so the type is only known
         // when the reference is used in a function.
-        expression.getExpression().accept(child(knownFunctionType));
+        // Model-only functions are not resolvable inside expression references: the
+        // functions that evaluate them (map, sort_by, min_by, max_by) build an Evaluator
+        // without the opt-in, so lint must not accept them where eval would reject them.
+        expression.getExpression().accept(new TypeChecker(knownFunctionType, problems, false));
         return EXPREF;
     }
 

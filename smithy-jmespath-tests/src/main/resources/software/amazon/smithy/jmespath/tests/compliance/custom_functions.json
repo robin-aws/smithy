@@ -116,4 +116,19 @@
       "error": "invalid-arity"
     }
   ]
+}, {
+  "comment": "model-only functions resolve inside expression references (map, sort_by, min_by, max_by)",
+  "given": {
+    "calls": [
+      {"n": 1},
+      {"n": 2}
+    ]
+  },
+  "cases": [
+    {
+      "comment": "map evaluates the model-only requires function inside an expression reference",
+      "expression": "map(&requires(@, @.n == `1`), calls)",
+      "result": [true, false]
+    }
+  ]
 }]

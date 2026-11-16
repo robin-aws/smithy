@@ -470,10 +470,9 @@ public class TypeCheckerTest {
     }
 
     @Test
-    public void modelOnlyFunctionsAreRejectedInsideExpressionReferences() {
-        // map/sort_by/min_by/max_by evaluate &expr without the opt-in, so lint must reject
-        // a model-only function inside an expression reference even when model-only is on.
-        assertThat(checkModelOnly("map(&resource(@, @), `[]`)"),
-                contains("[ERROR] Unknown function: resource (1:6)"));
+    public void modelOnlyFunctionsResolveInsideExpressionReferences() {
+        // A model-only function resolves inside an expression reference when model-only is
+        // on, so lint agrees with evaluation (map/sort_by/min_by/max_by carry the opt-in).
+        assertThat(checkModelOnly("map(&resource(@, @), `[]`)"), empty());
     }
 }

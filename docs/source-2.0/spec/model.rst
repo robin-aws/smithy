@@ -769,6 +769,12 @@ For example, a world snapshot for a single-region deployment of
 The :ref:`examples trait <examples-trait>` uses two world snapshots, ``before``
 and ``after``, to describe the state on either side of a call.
 
+The data model permits a snapshot to hold several services, but the ``resource``
+function that :ref:`contract traits <contract-traits>` use to resolve a
+reference handle currently requires the snapshot it resolves to hold exactly one
+service. Resolving references across several services in one snapshot is future
+work.
+
 .. _non-aws-traits:
 .. _traits:
 

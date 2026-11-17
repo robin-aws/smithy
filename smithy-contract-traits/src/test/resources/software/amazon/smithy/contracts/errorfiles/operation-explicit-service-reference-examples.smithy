@@ -38,9 +38,10 @@ operation Encrypt {
     output: EncryptOutput
 }
 
-// The reference pins an explicit service. The handle's service must be the full service
-// shape id so the world-snapshot lookup (keyed by shape id) resolves; the "Enabled key
-// succeeds" example only passes when it does.
+// The reference pins an explicit service. A world snapshot resolved by resource() holds
+// exactly one service, so the handle carries no service coordinate and the explicit
+// service does not affect resolution; the "Enabled key succeeds" example passes all the
+// same.
 @input
 @references([
     {resource: Key, service: Crypto, name: "key", ids: {keyId: "keyRef"}}

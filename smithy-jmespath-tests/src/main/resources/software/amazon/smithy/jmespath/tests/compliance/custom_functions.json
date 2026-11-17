@@ -20,16 +20,23 @@
         {"resources": {"example#Document": []}}
       ]
     },
+    "twoServices": {
+      "example#DocumentService": [
+        {"resources": {"example#Document": [{"identifiers": {"id": "d1"}, "properties": {"status": "DRAFT"}}]}}
+      ],
+      "example#OtherService": [
+        {"resources": {"example#Document": []}}
+      ]
+    },
     "badCollection": {
       "example#DocumentService": [
         {"resources": {"example#Document": {"not": "an array"}}}
       ]
     },
-    "handleD1": {"service": "example#DocumentService", "resource": "example#Document", "ids": {"id": "d1"}},
-    "handleMissingId": {"service": "example#DocumentService", "resource": "example#Document", "ids": {"id": "zzz"}},
-    "handleMissingService": {"service": "example#OtherService", "resource": "example#Document", "ids": {"id": "d1"}},
-    "handleNoIds": {"service": "example#DocumentService", "resource": "example#Document"},
-    "handleExtraId": {"service": "example#DocumentService", "resource": "example#Document", "ids": {"id": "d1", "bogus": "x"}},
+    "handleD1": {"resource": "example#Document", "ids": {"id": "d1"}},
+    "handleMissingId": {"resource": "example#Document", "ids": {"id": "zzz"}},
+    "handleNoIds": {"resource": "example#Document"},
+    "handleExtraId": {"resource": "example#Document", "ids": {"id": "d1", "bogus": "x"}},
     "notAHandle": "nope",
     "successCall": {"input": {"count": 1}, "error": null},
     "failCall": {"input": {"count": 1}, "error": {"shapeId": "example#SomeError", "content": {}}}
@@ -47,17 +54,12 @@
     },
     {
       "comment": "matches the second instance by its ids",
-      "expression": "resource(before, {service: 'example#DocumentService', resource: 'example#Document', ids: {id: 'd2'}}).properties.status",
+      "expression": "resource(before, {resource: 'example#Document', ids: {id: 'd2'}}).properties.status",
       "result": "PUBLISHED"
     },
     {
       "comment": "no resource matches the ids, so null",
       "expression": "resource(before, handleMissingId)",
-      "result": null
-    },
-    {
-      "comment": "the world holds no instance of the handle's service, so null",
-      "expression": "resource(before, handleMissingService)",
       "result": null
     },
     {
@@ -78,6 +80,11 @@
     {
       "comment": "a world with more than one instance of the service shape is an error",
       "expression": "resource(twoInstances, handleD1)",
+      "error": "invalid-value"
+    },
+    {
+      "comment": "a world that holds more than one service is an error, because resource() cannot choose one",
+      "expression": "resource(twoServices, handleD1)",
       "error": "invalid-value"
     },
     {

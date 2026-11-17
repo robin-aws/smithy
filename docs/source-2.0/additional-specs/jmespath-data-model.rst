@@ -139,24 +139,24 @@ Named :ref:`references-trait` entries are projected into the data model as
 resource *handles* reachable as ``<member-root>.<name>`` (for example
 ``input.key``). The entry is declared either on a structure or directly on a
 string shape used as one of its members. Each handle is an object
-``{service, resource, ids}`` synthesized from the reference's bindings:
-``resource`` is the shape ID of the referenced resource, ``service`` is the shape
-ID of the service that contains it, and ``ids`` maps each resource identifier name
-to its value. For a reference on a structure, ``ids`` comes from the reference's
-own ``ids`` mapping. When ``ids`` is :ref:`omitted <implicit-ids>`, each
-identifier's value is the value of the member of the same name.
+``{resource, ids}`` synthesized from the reference's bindings: ``resource`` is
+the shape ID of the referenced resource, and ``ids`` maps each resource
+identifier name to its value. For a reference on a structure, ``ids`` comes from
+the reference's own ``ids`` mapping. When ``ids`` is :ref:`omitted <implicit-ids>`,
+each identifier's value is the value of the member of the same name.
 For a reference on a string shape, which has exactly one
 identifier and no ``ids`` mapping, that identifier's value is the member's own
 value. The handle mirrors the coordinates that locate the resource in a
-:ref:`world snapshot <world-snapshot>`: the service shape, then the resource
-shape, then the identifiers.
+:ref:`world snapshot <world-snapshot>`: the resource shape, then the
+identifiers.
 
-``service`` is a service shape ID only. A world snapshot can hold more than one
-instance of a service (for example one per region), but a handle does not yet
-carry anything to choose among them, so ``service`` denotes the singleton
-instance of that service shape. Resolving a handle against a world that holds
-more than one instance of the service is an error. A future revision may extend
-the handle to address a specific instance.
+A handle carries no service coordinate. A world snapshot resolved by
+``resource`` holds exactly one service (see `Functions`_ below), so the service
+that contains the resource is unambiguous and nothing has to guess a "current
+service". Resolving a handle against a world that holds more than one instance
+of that service is an error. Addressing a specific service or instance within a
+world that holds several (for cross-service references such as ARNs) is future
+work.
 
 A handle is model-only: it is a pointer synthesized from the observable
 identifier members rather than data on the wire. The identifiers inside it are
@@ -181,17 +181,16 @@ model-only functions for use in contract expressions.
 Looks up a single resource instance in a ``world`` snapshot (a ``before`` or
 ``after`` state) and returns it, or ``null`` when no instance matches. ``world``
 is a :ref:`world snapshot <world-snapshot>`. ``handle`` is an object
-``{service, resource, ids}`` where ``service`` and ``resource`` are the service
-and resource shape IDs and ``ids`` maps each resource identifier name to its
-value; a named :ref:`references-trait` projects such a handle automatically
-(see `Reference handles`_).
+``{resource, ids}`` where ``resource`` is the resource shape ID and ``ids`` maps
+each resource identifier name to its value; a named :ref:`references-trait`
+projects such a handle automatically (see `Reference handles`_).
 
-Resolution follows the handle's coordinates into the snapshot. The ``service``
-shape ID selects that service's instances in the ``world``. A world snapshot
-holds at most one instance of each service shape: the function returns ``null``
-if the service has no instance in the snapshot, and it is an error if the
-service has more than one. Within that instance's
-``resources`` member, the instance of the ``resource`` shape whose
+The ``world`` passed to ``resource`` must hold exactly one service, so the handle
+needs no service coordinate: resolving a world that holds no service returns
+``null``, and resolving one that holds more than one service is an error. That
+single service holds at most one instance: the function returns ``null`` if it
+has no instance, and it is an error if it has more than one. Within that
+instance's ``resources`` member, the instance of the ``resource`` shape whose
 ``identifiers`` match the handle's ``ids`` is returned, or ``null`` when none
 matches. The returned resource instance is an object with ``identifiers`` and
 ``properties`` members, so a property is read through ``properties`` (for example

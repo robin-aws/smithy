@@ -16,13 +16,19 @@ import software.amazon.smithy.jmespath.RuntimeType;
  *
  * <p>The handle is a reference structure:
  * <pre>
- * { service: String, resource: String, ids: { idName: idValue, ... } }
+ * { resource: String, ids: { idName: idValue, ... } }
  * </pre>
- * where {@code service} and {@code resource} are the service and resource shape IDs.
+ * where {@code resource} is the resource shape ID.
+ *
+ * <p>A world snapshot resolved by this function must hold exactly one service, so the
+ * handle carries no service coordinate and nothing has to guess a "current service": an
+ * empty world resolves to null, and a world holding more than one service is an error.
+ * Choosing among several services in one world (for cross-service references such as
+ * ARNs) is future work.
  *
  * <p>Resolution follows the handle's coordinates into the snapshot. The world is keyed
  * by service shape ID, and each entry is the array of that service's instances. A world
- * snapshot may hold at most one instance of each service shape, so the function returns
+ * snapshot may hold at most one instance of that service shape, so the function returns
  * null when the service has no instance, and it is an error when the service has more
  * than one. Within that instance's {@code resources} member, the instance of the
  * handle's {@code resource} shape whose {@code identifiers} all equal {@code handle.ids}
@@ -44,16 +50,31 @@ class ResourceFunction implements Function {
         T world = arguments.get(0).expectObject();
         T handle = arguments.get(1).expectObject();
 
-        T service = runtime.value(handle, runtime.createString("service"));
         T resourceType = runtime.value(handle, runtime.createString("resource"));
-        if (!runtime.is(service, RuntimeType.STRING) || !runtime.is(resourceType, RuntimeType.STRING)) {
+        if (!runtime.is(resourceType, RuntimeType.STRING)) {
             return runtime.createNull();
         }
         T ids = runtime.value(handle, runtime.createString("ids"));
 
-        // The world is keyed by service shape ID; each entry is the array of that
-        // service's instances. A world snapshot may hold at most one instance of each
-        // service shape: none resolves to null, more than one is an error.
+        // The world is keyed by service shape ID. A world snapshot resolved by resource()
+        // must hold exactly one service, so the handle needs no service coordinate: an
+        // empty world resolves to null, and more than one service is an error.
+        int serviceCount = runtime.length(world);
+        if (serviceCount == 0) {
+            return runtime.createNull();
+        }
+        if (serviceCount > 1) {
+            throw new JmespathException(JmespathExceptionType.INVALID_VALUE,
+                    String.format(
+                            "resource() cannot choose a service: the world snapshot holds %d services, "
+                                    + "but a world snapshot resolved by resource() must hold exactly one",
+                            serviceCount));
+        }
+        T service = runtime.asIterable(world).iterator().next();
+
+        // Each service entry is the array of that service's instances. A world snapshot
+        // may hold at most one instance of the service shape: none resolves to null, more
+        // than one is an error.
         T instances = runtime.value(world, service);
         if (!runtime.is(instances, RuntimeType.ARRAY)) {
             return runtime.createNull();

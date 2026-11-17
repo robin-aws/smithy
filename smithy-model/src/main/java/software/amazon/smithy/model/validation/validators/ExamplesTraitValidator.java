@@ -137,11 +137,11 @@ public final class ExamplesTraitValidator extends AbstractValidator {
      * @return Returns the assembled call node.
      */
     public static ObjectNode buildOperationCall(Model model, OperationShape shape, ExamplesTrait.Example example) {
-        ObjectNode input = withReferenceHandles(model, shape, shape.getInputShape(), example.getInput());
+        ObjectNode input = withReferenceHandles(model, shape.getInputShape(), example.getInput());
         ObjectNode.Builder builder = Node.objectNodeBuilder().withMember("input", input);
         example.getOutput()
                 .ifPresent(output -> builder.withMember("output",
-                        withReferenceHandles(model, shape, shape.getOutputShape(), output)));
+                        withReferenceHandles(model, shape.getOutputShape(), output)));
         example.getError()
                 .ifPresent(error -> builder.withMember("error",
                         Node.objectNodeBuilder()
@@ -160,7 +160,6 @@ public final class ExamplesTraitValidator extends AbstractValidator {
     // member's target string shape (the member's own value is the single identifier).
     private static ObjectNode withReferenceHandles(
             Model model,
-            OperationShape operation,
             ShapeId structureId,
             ObjectNode values
     ) {
@@ -192,7 +191,7 @@ public final class ExamplesTraitValidator extends AbstractValidator {
                     ids.withMember(idName, values.getMember(memberName).orElse(Node.nullNode()));
                 }
                 result = result.withMember(reference.getName().get(),
-                        buildHandle(model, operation, reference, ids.build()));
+                        buildHandle(reference, ids.build()));
             }
         }
 
@@ -214,28 +213,24 @@ public final class ExamplesTraitValidator extends AbstractValidator {
                 Node value = values.getMember(member.getMemberName()).orElse(Node.nullNode());
                 ObjectNode ids = Node.objectNodeBuilder().withMember(identifier.get(), value).build();
                 result = result.withMember(reference.getName().get(),
-                        buildHandle(model, operation, reference, ids));
+                        buildHandle(reference, ids));
             }
         }
 
         return result;
     }
 
-    // Builds the {service, resource, ids} handle object. The handle locates the resource
-    // under a service shape in the world snapshot: the reference's explicit service, else
-    // the single service that contains both the operation and the resource; left unset
-    // when that is ambiguous.
+    // Builds the {resource, ids} handle object. The resource is located in the world
+    // snapshot, which is required to hold exactly one service, so the handle carries no
+    // service coordinate and nothing has to guess a "current service".
     private static ObjectNode buildHandle(
-            Model model,
-            OperationShape operation,
             ReferencesTrait.Reference reference,
             ObjectNode ids
     ) {
-        ObjectNode.Builder handle = Node.objectNodeBuilder()
+        return Node.objectNodeBuilder()
                 .withMember("resource", reference.getResource().toString())
-                .withMember("ids", ids);
-        serviceName(model, operation, reference).ifPresent(service -> handle.withMember("service", service));
-        return handle.build();
+                .withMember("ids", ids)
+                .build();
     }
 
     // The single identifier name of a resource referenced from a string shape, or empty
@@ -246,41 +241,6 @@ public final class ExamplesTraitValidator extends AbstractValidator {
                 .map(ResourceShape::getIdentifiers)
                 .filter(ids -> ids.size() == 1)
                 .map(ids -> ids.keySet().iterator().next());
-    }
-
-    // The service shape name that locates the referenced resource: the reference's own
-    // service when set, otherwise the sole service that contains both the operation and the
-    // resource (the service currently in use, per the references trait).
-    private static Optional<String> serviceName(
-            Model model,
-            OperationShape operation,
-            ReferencesTrait.Reference reference
-    ) {
-        if (reference.getService().isPresent()) {
-            return Optional.of(reference.getService().get().toString());
-        }
-        TopDownIndex index = TopDownIndex.of(model);
-        ShapeId resource = reference.getResource();
-        ServiceShape found = null;
-        for (ServiceShape service : model.getServiceShapes()) {
-            if (!index.getContainedOperations(service).contains(operation)) {
-                continue;
-            }
-            boolean contains = false;
-            for (ResourceShape contained : index.getContainedResources(service)) {
-                if (contained.getId().equals(resource)) {
-                    contains = true;
-                    break;
-                }
-            }
-            if (contains) {
-                if (found != null) {
-                    return Optional.empty();
-                }
-                found = service;
-            }
-        }
-        return Optional.ofNullable(found).map(service -> service.getId().toString());
     }
 
     // Builds a visitor for one named section (input, output, error) of an example, so a

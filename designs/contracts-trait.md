@@ -74,7 +74,7 @@ A small world snapshot with one SQS instance and one KMS instance:
 
 Each top-level key is a service shape mapped to the array of its instances; each instance exposes its `resources`; each resource instance is a record with its `identifiers` and `properties`. A world snapshot can describe several services together, for example the queue's `kmsMasterKey` ARN pointing into the `KMS` entry.
 
-This increment keeps resolution simple: a reference handle carries a `service` only when the reference declares one explicitly, never guessed. When the handle names a `service`, `resource(...)` (see New functions below) resolves against it. When it names none, `resource(...)` requires the world snapshot it resolves to hold exactly one service, so nothing has to guess a "current service". Following the queue's ARN into the `KMS` entry, or selecting a specific non-default instance such as a region, needs explicit coordinates such as an ARN and is future work.
+This increment keeps resolution simple: a reference handle carries a `service` only when the reference declares one explicitly. When the handle names a `service`, `resource(...)` (see New functions below) resolves against it. When it names none, `resource(...)` requires the world snapshot it resolves to hold exactly one service, so nothing has to guess a "current service". Following the queue's ARN into the `KMS` entry, or selecting a specific non-default instance such as a region, needs explicit coordinates such as an ARN and is future work.
 
 ### Naming references
 

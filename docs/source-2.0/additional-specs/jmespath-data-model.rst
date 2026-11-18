@@ -150,8 +150,7 @@ value. The handle mirrors the coordinates that locate the resource in a
 :ref:`world snapshot <world-snapshot>`: the service shape, then the resource
 shape, then the identifiers.
 
-``service`` is present only when the reference declares one; it is never guessed.
-When a handle has a ``service``, ``resource`` resolves against that service. When
+``service`` is present only when the reference declares one. When a handle has a ``service``, ``resource`` resolves against that service. When
 it has none, ``resource`` requires the world snapshot to hold exactly one service
 and resolves against it (see `Functions`_ below), so nothing has to guess a
 "current service". In either case the chosen service holds at most one instance,

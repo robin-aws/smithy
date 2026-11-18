@@ -20,31 +20,31 @@ abstract class FunctionArgument<T> {
         this.modelOnlyFunctions = modelOnlyFunctions;
     }
 
-    T expectValue() {
+    public T expectValue() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    T expectString() {
+    public T expectString() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    T expectNumber() {
+    public T expectNumber() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    T expectArray() {
+    public T expectArray() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    T expectObject() {
+    public T expectObject() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    T expectAnyOf(Set<RuntimeType> types) {
+    public T expectAnyOf(Set<RuntimeType> types) {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    JmespathExpression expectExpression() {
+    public JmespathExpression expectExpression() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
@@ -55,7 +55,7 @@ abstract class FunctionArgument<T> {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    static <T> FunctionArgument<T> of(
+    public static <T> FunctionArgument<T> of(
             JmespathRuntime<T> runtime,
             JmespathExpression expression,
             boolean modelOnlyFunctions
@@ -63,20 +63,20 @@ abstract class FunctionArgument<T> {
         return new Expression<T>(runtime, expression, modelOnlyFunctions);
     }
 
-    static <T> FunctionArgument<T> of(JmespathRuntime<T> runtime, T value, boolean modelOnlyFunctions) {
+    public static <T> FunctionArgument<T> of(JmespathRuntime<T> runtime, T value, boolean modelOnlyFunctions) {
         return new Value<T>(runtime, value, modelOnlyFunctions);
     }
 
     static class Value<T> extends FunctionArgument<T> {
         T value;
 
-        Value(JmespathRuntime<T> runtime, T value, boolean modelOnlyFunctions) {
+        public Value(JmespathRuntime<T> runtime, T value, boolean modelOnlyFunctions) {
             super(runtime, modelOnlyFunctions);
             this.value = value;
         }
 
         @Override
-        T expectValue() {
+        public T expectValue() {
             return value;
         }
 
@@ -88,7 +88,7 @@ abstract class FunctionArgument<T> {
             }
         }
 
-        T expectAnyOf(Set<RuntimeType> types) {
+        public T expectAnyOf(Set<RuntimeType> types) {
             if (types.contains(runtime.typeOf(value))) {
                 return value;
             } else {
@@ -97,22 +97,22 @@ abstract class FunctionArgument<T> {
         }
 
         @Override
-        T expectString() {
+        public T expectString() {
             return expectType(RuntimeType.STRING);
         }
 
         @Override
-        T expectNumber() {
+        public T expectNumber() {
             return expectType(RuntimeType.NUMBER);
         }
 
         @Override
-        T expectArray() {
+        public T expectArray() {
             return expectType(RuntimeType.ARRAY);
         }
 
         @Override
-        T expectObject() {
+        public T expectObject() {
             return expectType(RuntimeType.OBJECT);
         }
     }
@@ -120,13 +120,13 @@ abstract class FunctionArgument<T> {
     static class Expression<T> extends FunctionArgument<T> {
         JmespathExpression expression;
 
-        Expression(JmespathRuntime<T> runtime, JmespathExpression expression, boolean modelOnlyFunctions) {
+        public Expression(JmespathRuntime<T> runtime, JmespathExpression expression, boolean modelOnlyFunctions) {
             super(runtime, modelOnlyFunctions);
             this.expression = expression;
         }
 
         @Override
-        JmespathExpression expectExpression() {
+        public JmespathExpression expectExpression() {
             return expression;
         }
 

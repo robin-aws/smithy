@@ -20,42 +20,42 @@ abstract class FunctionArgument<T> {
         this.modelOnlyFunctions = modelOnlyFunctions;
     }
 
-    public T expectValue() {
+    T expectValue() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    public T expectString() {
+    T expectString() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    public T expectNumber() {
+    T expectNumber() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    public T expectArray() {
+    T expectArray() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    public T expectObject() {
+    T expectObject() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    public T expectAnyOf(Set<RuntimeType> types) {
+    T expectAnyOf(Set<RuntimeType> types) {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    public JmespathExpression expectExpression() {
+    JmespathExpression expectExpression() {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
     // Evaluates an expression-reference argument against the given current node, carrying
     // the model-only function opt-in of the evaluation that built this argument so the same
     // functions resolve inside &expr as outside it.
-    public T evaluateExpression(T current) {
+    T evaluateExpression(T current) {
         throw new JmespathException(JmespathExceptionType.INVALID_TYPE, "invalid-type");
     }
 
-    public static <T> FunctionArgument<T> of(
+    static <T> FunctionArgument<T> of(
             JmespathRuntime<T> runtime,
             JmespathExpression expression,
             boolean modelOnlyFunctions
@@ -63,20 +63,20 @@ abstract class FunctionArgument<T> {
         return new Expression<T>(runtime, expression, modelOnlyFunctions);
     }
 
-    public static <T> FunctionArgument<T> of(JmespathRuntime<T> runtime, T value, boolean modelOnlyFunctions) {
+    static <T> FunctionArgument<T> of(JmespathRuntime<T> runtime, T value, boolean modelOnlyFunctions) {
         return new Value<T>(runtime, value, modelOnlyFunctions);
     }
 
     static class Value<T> extends FunctionArgument<T> {
         T value;
 
-        public Value(JmespathRuntime<T> runtime, T value, boolean modelOnlyFunctions) {
+        Value(JmespathRuntime<T> runtime, T value, boolean modelOnlyFunctions) {
             super(runtime, modelOnlyFunctions);
             this.value = value;
         }
 
         @Override
-        public T expectValue() {
+        T expectValue() {
             return value;
         }
 
@@ -88,7 +88,7 @@ abstract class FunctionArgument<T> {
             }
         }
 
-        public T expectAnyOf(Set<RuntimeType> types) {
+        T expectAnyOf(Set<RuntimeType> types) {
             if (types.contains(runtime.typeOf(value))) {
                 return value;
             } else {
@@ -97,22 +97,22 @@ abstract class FunctionArgument<T> {
         }
 
         @Override
-        public T expectString() {
+        T expectString() {
             return expectType(RuntimeType.STRING);
         }
 
         @Override
-        public T expectNumber() {
+        T expectNumber() {
             return expectType(RuntimeType.NUMBER);
         }
 
         @Override
-        public T expectArray() {
+        T expectArray() {
             return expectType(RuntimeType.ARRAY);
         }
 
         @Override
-        public T expectObject() {
+        T expectObject() {
             return expectType(RuntimeType.OBJECT);
         }
     }
@@ -120,18 +120,18 @@ abstract class FunctionArgument<T> {
     static class Expression<T> extends FunctionArgument<T> {
         JmespathExpression expression;
 
-        public Expression(JmespathRuntime<T> runtime, JmespathExpression expression, boolean modelOnlyFunctions) {
+        Expression(JmespathRuntime<T> runtime, JmespathExpression expression, boolean modelOnlyFunctions) {
             super(runtime, modelOnlyFunctions);
             this.expression = expression;
         }
 
         @Override
-        public JmespathExpression expectExpression() {
+        JmespathExpression expectExpression() {
             return expression;
         }
 
         @Override
-        public T evaluateExpression(T current) {
+        T evaluateExpression(T current) {
             return new Evaluator<>(current, runtime, modelOnlyFunctions).visit(expression);
         }
     }

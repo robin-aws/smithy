@@ -9,10 +9,9 @@ service Crypto {
     resources: [Key]
 }
 
-// A second service contains the resource but NOT the operation. An omitted `service` must
-// resolve to the service that contains the operation (Crypto), not be left unset because
-// two services contain the resource; otherwise the handle has no service and the correct
-// "Enabled key succeeds" example fails.
+// A second service also holds the referenced resource. The reference has no explicit
+// `service`, so the projected handle has none either. When both services appear in the
+// `before` snapshot, resource() cannot choose one and the contract cannot be evaluated.
 service Admin {
     resources: [Key]
 }
@@ -29,16 +28,13 @@ resource Key {
 })
 @examples([
     {
-        title: "Enabled key succeeds"
+        title: "Two services in the snapshot cannot be disambiguated"
         input: {keyRef: "k1"}
         output: {}
-        before: {"smithy.example#Crypto": [{resources: {"smithy.example#Key": [{identifiers: {keyId: "k1"}, properties: {keyState: "ENABLED"}}]}}]}
-    }
-    {
-        title: "Disabled key must not succeed"
-        input: {keyRef: "k1"}
-        output: {}
-        before: {"smithy.example#Crypto": [{resources: {"smithy.example#Key": [{identifiers: {keyId: "k1"}, properties: {keyState: "DISABLED"}}]}}]}
+        before: {
+            "smithy.example#Crypto": [{resources: {"smithy.example#Key": [{identifiers: {keyId: "k1"}, properties: {keyState: "ENABLED"}}]}}]
+            "smithy.example#Admin": [{resources: {"smithy.example#Key": [{identifiers: {keyId: "k1"}, properties: {keyState: "ENABLED"}}]}}]
+        }
     }
 ])
 operation Encrypt {

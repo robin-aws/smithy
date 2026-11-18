@@ -220,17 +220,18 @@ public final class ExamplesTraitValidator extends AbstractValidator {
         return result;
     }
 
-    // Builds the {resource, ids} handle object. The resource is located in the world
-    // snapshot, which is required to hold exactly one service, so the handle carries no
-    // service coordinate and nothing has to guess a "current service".
+    // Builds the {service, resource, ids} handle object. The handle carries a service only
+    // when the reference declares one explicitly; it is never guessed. When the handle has
+    // no service, resource() requires the world snapshot to hold exactly one service.
     private static ObjectNode buildHandle(
             ReferencesTrait.Reference reference,
             ObjectNode ids
     ) {
-        return Node.objectNodeBuilder()
+        ObjectNode.Builder handle = Node.objectNodeBuilder()
                 .withMember("resource", reference.getResource().toString())
-                .withMember("ids", ids)
-                .build();
+                .withMember("ids", ids);
+        reference.getService().ifPresent(service -> handle.withMember("service", service.toString()));
+        return handle.build();
     }
 
     // The single identifier name of a resource referenced from a string shape, or empty

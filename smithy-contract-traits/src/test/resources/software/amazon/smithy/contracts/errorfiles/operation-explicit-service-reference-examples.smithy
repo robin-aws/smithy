@@ -38,10 +38,10 @@ operation Encrypt {
     output: EncryptOutput
 }
 
-// The reference pins an explicit service. A world snapshot resolved by resource() holds
-// exactly one service, so the handle carries no service coordinate and the explicit
-// service does not affect resolution; the "Enabled key succeeds" example passes all the
-// same.
+// The reference pins an explicit service, so the projected handle carries it and
+// resource() resolves against that named service (requiring one instance of it). The
+// "Enabled key succeeds" example passes because the before snapshot holds that one
+// instance.
 @input
 @references([
     {resource: Key, service: Crypto, name: "key", ids: {keyId: "keyRef"}}

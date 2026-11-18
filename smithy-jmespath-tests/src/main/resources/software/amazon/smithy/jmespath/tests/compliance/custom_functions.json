@@ -34,7 +34,9 @@
       ]
     },
     "handleD1": {"resource": "example#Document", "ids": {"id": "d1"}},
+    "handleD1Service": {"service": "example#DocumentService", "resource": "example#Document", "ids": {"id": "d1"}},
     "handleMissingId": {"resource": "example#Document", "ids": {"id": "zzz"}},
+    "handleMissingService": {"service": "example#OtherService", "resource": "example#Document", "ids": {"id": "d1"}},
     "handleNoIds": {"resource": "example#Document"},
     "handleExtraId": {"resource": "example#Document", "ids": {"id": "d1", "bogus": "x"}},
     "notAHandle": "nope",
@@ -43,7 +45,7 @@
   },
   "cases": [
     {
-      "comment": "resolves a matching resource and reads a property through properties",
+      "comment": "a handle with no service resolves against the single service in the world",
       "expression": "resource(before, handleD1).properties.status",
       "result": "DRAFT"
     },
@@ -53,13 +55,23 @@
       "result": "d1"
     },
     {
-      "comment": "matches the second instance by its ids",
-      "expression": "resource(before, {resource: 'example#Document', ids: {id: 'd2'}}).properties.status",
+      "comment": "a handle with an explicit service resolves against that named service",
+      "expression": "resource(before, {service: 'example#DocumentService', resource: 'example#Document', ids: {id: 'd2'}}).properties.status",
       "result": "PUBLISHED"
+    },
+    {
+      "comment": "an explicit service picks its named service even when the world holds several",
+      "expression": "resource(twoServices, handleD1Service).properties.status",
+      "result": "DRAFT"
     },
     {
       "comment": "no resource matches the ids, so null",
       "expression": "resource(before, handleMissingId)",
+      "result": null
+    },
+    {
+      "comment": "the world holds no instance of the handle's explicit service, so null",
+      "expression": "resource(before, handleMissingService)",
       "result": null
     },
     {
@@ -78,12 +90,12 @@
       "result": null
     },
     {
-      "comment": "a world with more than one instance of the service shape is an error",
+      "comment": "a world with more than one instance of the chosen service shape is an error",
       "expression": "resource(twoInstances, handleD1)",
       "error": "invalid-value"
     },
     {
-      "comment": "a world that holds more than one service is an error, because resource() cannot choose one",
+      "comment": "a handle with no service against a world that holds more than one service is an error",
       "expression": "resource(twoServices, handleD1)",
       "error": "invalid-value"
     },
